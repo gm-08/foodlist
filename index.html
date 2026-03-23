@@ -1,0 +1,1046 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Chicago Eats</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500&family=DM+Serif+Display:ital@0;1&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <style>
+    :root {
+      --bg: #f7f6f2;
+      --surface: #ffffff;
+      --border: rgba(0,0,0,0.09);
+      --border-hover: rgba(0,0,0,0.18);
+      --text: #1a1a18;
+      --text-muted: #888880;
+      --text-faint: #bbb9b0;
+      --accent: #2a5c45;
+      --accent-light: #eef4f1;
+      --accent-text: #1e4433;
+      --danger: #c0392b;
+      --gold: #b07d2a;
+      --gold-bg: #fdf6e8;
+      --blue: #1a4a7a;
+      --blue-bg: #eaf0f8;
+      --green-bg: #eef4f1;
+      --green-text: #1e4433;
+      --radius: 10px;
+      --radius-sm: 6px;
+      --shadow: 0 1px 3px rgba(0,0,0,0.07), 0 4px 16px rgba(0,0,0,0.04);
+      --shadow-lg: 0 8px 32px rgba(0,0,0,0.12);
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--text); font-size: 14px; line-height: 1.5; min-height: 100vh; }
+
+    /* ── LOGIN ── */
+    #login-screen { display: flex; align-items: center; justify-content: center; min-height: 100vh; padding: 2rem; }
+    .login-card { background: var(--surface); border-radius: 16px; padding: 2.5rem; width: 100%; max-width: 380px; box-shadow: var(--shadow-lg); border: 1px solid var(--border); }
+    .login-card h1 { font-family: 'DM Serif Display', serif; font-size: 32px; font-weight: 400; margin-bottom: 4px; color: var(--text); }
+    .login-card p { color: var(--text-muted); font-size: 14px; margin-bottom: 2rem; }
+    .login-field { margin-bottom: 14px; }
+    .login-field label { display: block; font-size: 12px; font-weight: 500; color: var(--text-muted); margin-bottom: 5px; letter-spacing: 0.04em; text-transform: uppercase; }
+    .login-field input { width: 100%; padding: 10px 12px; border: 1px solid var(--border); border-radius: var(--radius-sm); font-size: 14px; font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--text); outline: none; transition: border-color 0.15s; }
+    .login-field input:focus { border-color: var(--accent); }
+    .login-btn { width: 100%; padding: 11px; background: var(--accent); color: #fff; border: none; border-radius: var(--radius-sm); font-size: 14px; font-family: 'DM Sans', sans-serif; font-weight: 500; cursor: pointer; margin-top: 6px; transition: opacity 0.15s; }
+    .login-btn:hover { opacity: 0.88; }
+    .login-error { color: var(--danger); font-size: 13px; margin-top: 10px; }
+
+    /* ── APP SHELL ── */
+    #app { display: none; }
+    .topbar { background: var(--surface); border-bottom: 1px solid var(--border); padding: 0 1.5rem; display: flex; align-items: center; justify-content: space-between; height: 54px; position: sticky; top: 0; z-index: 40; }
+    .topbar-left { display: flex; align-items: baseline; gap: 10px; }
+    .topbar h1 { font-family: 'DM Serif Display', serif; font-size: 22px; font-weight: 400; color: var(--text); }
+    .topbar-sub { font-size: 12px; color: var(--text-muted); }
+    .topbar-right { display: flex; align-items: center; gap: 10px; }
+    .signout-btn { font-size: 12px; color: var(--text-muted); background: none; border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 5px 12px; cursor: pointer; font-family: 'DM Sans', sans-serif; }
+    .signout-btn:hover { color: var(--text); border-color: var(--border-hover); }
+
+    /* ── STATS ── */
+    .stats-bar { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; padding: 1.25rem 1.5rem; }
+    .stat { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px 16px; }
+    .stat-label { font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 5px; }
+    .stat-val { font-size: 26px; font-weight: 300; color: var(--text); line-height: 1; }
+
+    /* ── TOOLBAR ── */
+    .toolbar { padding: 0 1.5rem 1rem; display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+    .toolbar select, .toolbar input[type=text] { font-size: 13px; padding: 7px 10px; border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--surface); color: var(--text); font-family: 'DM Sans', sans-serif; outline: none; }
+    .toolbar select:focus, .toolbar input:focus { border-color: var(--accent); }
+    .toolbar input[type=text] { flex: 1; min-width: 120px; }
+    .btn { font-size: 13px; padding: 7px 16px; border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--surface); color: var(--text); cursor: pointer; font-family: 'DM Sans', sans-serif; white-space: nowrap; transition: all 0.12s; }
+    .btn:hover { border-color: var(--border-hover); background: var(--bg); }
+    .btn-primary { background: var(--accent); color: #fff; border-color: var(--accent); }
+    .btn-primary:hover { opacity: 0.88; background: var(--accent); }
+    .btn-sm { font-size: 12px; padding: 4px 10px; }
+
+    /* ── TABLE ── */
+    .table-wrap { padding: 0 1.5rem 2rem; overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; background: var(--surface); border-radius: var(--radius); border: 1px solid var(--border); overflow: hidden; box-shadow: var(--shadow); }
+    thead { background: var(--bg); }
+    th { text-align: left; padding: 10px 12px; font-size: 11px; font-weight: 500; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.06em; border-bottom: 1px solid var(--border); cursor: pointer; white-space: nowrap; user-select: none; }
+    th:hover { color: var(--text); }
+    td { padding: 10px 12px; border-bottom: 1px solid var(--border); vertical-align: middle; }
+    tr:last-child td { border-bottom: none; }
+    tbody tr:hover td { background: var(--bg); }
+    .add-row { padding: 10px 12px; font-size: 13px; color: var(--text-muted); cursor: pointer; display: flex; align-items: center; gap: 6px; transition: color 0.12s; border-top: 1px solid var(--border); }
+    .add-row:hover { color: var(--accent); background: var(--accent-light); }
+
+    /* ── BADGES ── */
+    .badge { font-size: 11px; padding: 2px 8px; border-radius: 99px; display: inline-block; white-space: nowrap; }
+    .badge-cat { background: var(--accent-light); color: var(--accent-text); }
+    .badge-food { background: var(--bg); color: var(--text-muted); border: 1px solid var(--border); }
+    .badge-cuisine { background: var(--blue-bg); color: var(--blue); }
+    .badge-m1 { background: #fdf0ec; color: #8b3a1e; }
+    .badge-m2 { background: #f9d9cc; color: #6b2a12; }
+    .badge-m3 { background: #c0392b; color: #fff; }
+    .badge-bib { background: var(--blue-bg); color: var(--blue); }
+    .badge-jb { background: var(--green-bg); color: var(--green-text); }
+
+    /* ── HYPE SYMBOL ── */
+    .hype-sym { font-size: 15px; letter-spacing: 1px; }
+    .hype-list { color: var(--text-faint); font-size: 13px; }
+    .hype-opt { font-size: 13px; padding: 5px 12px; border: 1px solid var(--border); border-radius: 99px; background: var(--surface); color: var(--text-muted); cursor: pointer; font-family: 'DM Sans', sans-serif; transition: all 0.12s; }
+    .hype-opt.active { background: var(--accent-light); color: var(--accent-text); border-color: transparent; font-weight: 500; }
+    .hype-opt:hover:not(.active) { border-color: var(--border-hover); color: var(--text); }
+
+    /* ── HYPE GROUPED VIEW ── */
+    .hype-section { margin-bottom: 1.5rem; }
+    .hype-section-header { display: flex; align-items: center; gap: 8px; padding: 0 1.5rem; margin-bottom: 8px; }
+    .hype-section-header .hype-label { font-size: 13px; font-weight: 500; color: var(--text-muted); }
+    .hype-section-header .hype-count { font-size: 12px; color: var(--text-faint); }
+
+    /* ── TRIED BUTTON ── */
+    .btn-tried { font-size: 12px; padding: 4px 10px; border: 1px solid var(--border); border-radius: var(--radius-sm); background: transparent; color: var(--text-muted); cursor: pointer; white-space: nowrap; font-family: 'DM Sans', sans-serif; transition: all 0.12s; }
+    .btn-tried:hover { background: var(--green-bg); color: var(--green-text); border-color: transparent; }
+    .btn-tried.is-tried { background: var(--green-bg); color: var(--green-text); border-color: transparent; }
+    .stars-gold { color: var(--gold); font-size: 12px; }
+
+    /* ── INLINE DROPDOWN ── */
+    #inline-dd { display: none; position: fixed; z-index: 300; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 6px; min-width: 180px; box-shadow: var(--shadow-lg); }
+    #inline-dd.open { display: block; }
+    #inline-dd input { width: 100%; padding: 6px 8px; font-size: 13px; border: 1px solid var(--border); border-radius: var(--radius-sm); font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--text); outline: none; margin-bottom: 4px; }
+    #inline-dd input:focus { border-color: var(--accent); }
+    .dd-option { padding: 6px 8px; font-size: 13px; border-radius: var(--radius-sm); cursor: pointer; color: var(--text); }
+    .dd-option:hover { background: var(--bg); }
+    .dd-option.selected { color: var(--accent); font-weight: 500; }
+
+    /* ── MODALS ── */
+    .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(15,15,12,0.4); z-index: 200; align-items: center; justify-content: center; padding: 1rem; }
+    .modal-overlay.open { display: flex; }
+    .modal { background: var(--surface); border-radius: 14px; padding: 1.75rem; width: 100%; max-width: 500px; max-height: 90vh; overflow-y: auto; box-shadow: var(--shadow-lg); }
+    .modal h2 { font-family: 'DM Serif Display', serif; font-size: 22px; font-weight: 400; margin-bottom: 1.25rem; }
+    .form-group { margin-bottom: 1rem; }
+    .form-group label { display: block; font-size: 11px; font-weight: 500; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 5px; }
+    .form-group input[type=text], .form-group input[type=number], .form-group select, .form-group textarea {
+      width: 100%; padding: 9px 11px; border: 1px solid var(--border); border-radius: var(--radius-sm);
+      font-size: 14px; font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--text); outline: none; transition: border-color 0.12s;
+    }
+    .form-group input:focus, .form-group select:focus, .form-group textarea:focus { border-color: var(--accent); background: var(--surface); }
+    .form-group textarea { resize: vertical; min-height: 64px; line-height: 1.5; }
+    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .section-div { font-size: 11px; font-weight: 500; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.06em; margin: 1.25rem 0 0.75rem; padding-top: 1.1rem; border-top: 1px solid var(--border); }
+    .modal-footer { display: flex; justify-content: space-between; align-items: center; margin-top: 1.25rem; padding-top: 1rem; border-top: 1px solid var(--border); }
+    .delete-link { font-size: 13px; color: var(--danger); background: none; border: none; cursor: pointer; font-family: 'DM Sans', sans-serif; }
+    .delete-link:hover { text-decoration: underline; }
+    .tag-pool { display: flex; flex-wrap: wrap; gap: 5px; padding: 8px; border: 1px solid var(--border); border-radius: var(--radius-sm); min-height: 40px; background: var(--bg); }
+    .tag-pill { font-size: 12px; padding: 3px 6px 3px 9px; border-radius: 99px; background: var(--surface); color: var(--text-muted); border: 1px solid var(--border); cursor: default; transition: all 0.1s; display: inline-flex; align-items: center; gap: 3px; }
+    .tag-pill.on { background: var(--accent-light); color: var(--accent-text); border-color: transparent; }
+    .tag-del { font-size: 14px; line-height: 1; color: inherit; opacity: 0.45; cursor: pointer; padding: 0 2px; }
+    .tag-del:hover { opacity: 1; }
+    .new-tag-row { display: flex; gap: 6px; margin-top: 7px; }
+    .new-tag-row input { flex: 1; padding: 6px 9px; font-size: 13px; border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--bg); color: var(--text); font-family: 'DM Sans', sans-serif; outline: none; }
+    .new-tag-row input:focus { border-color: var(--accent); background: var(--surface); }
+
+    /* ── ACCOLADES ── */
+    .accolade-grid { display: flex; flex-direction: column; gap: 8px; }
+    .accolade-row { display: flex; gap: 16px; flex-wrap: wrap; }
+    .accolade-row label { display: flex; align-items: center; gap: 6px; font-size: 13px; cursor: pointer; color: var(--text); }
+    .accolade-row input[type=checkbox] { width: 14px; height: 14px; accent-color: var(--accent); cursor: pointer; }
+
+    /* ── RATING MODAL ── */
+    .rating-modal { background: var(--surface); border-radius: 14px; padding: 2rem; width: 100%; max-width: 320px; text-align: center; box-shadow: var(--shadow-lg); }
+    .rating-modal h3 { font-family: 'DM Serif Display', serif; font-size: 20px; font-weight: 400; margin-bottom: 6px; }
+    .rating-modal p { font-size: 13px; color: var(--text-muted); margin-bottom: 1.25rem; }
+    .star-row { display: flex; justify-content: center; gap: 6px; margin-bottom: 1.25rem; }
+    .star-btn { font-size: 28px; background: none; border: none; cursor: pointer; color: #ddd; transition: color 0.1s; line-height: 1; padding: 0 2px; }
+    .star-btn.lit { color: var(--gold); }
+    .rating-actions { display: flex; gap: 8px; justify-content: center; }
+
+    /* ── MAP ── */
+    .map-section { padding: 0 1.5rem 2rem; }
+    #map-leaflet { height: 520px; border-radius: var(--radius); border: 1px solid var(--border); box-shadow: var(--shadow); }
+    .leaflet-popup-content { font-family: 'DM Sans', sans-serif; font-size: 13px; }
+    .leaflet-popup-content strong { font-size: 14px; display: block; margin-bottom: 3px; }
+
+    /* ── PLACES AUTOCOMPLETE ── */
+    .places-wrap { position: relative; }
+    #places-suggestions { display: none; position: absolute; top: calc(100% + 4px); left: 0; right: 0; z-index: 500; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow-lg); max-height: 260px; overflow-y: auto; }
+    .places-suggestion { padding: 10px 12px; cursor: pointer; border-bottom: 1px solid var(--border); transition: background 0.1s; }
+    .places-suggestion:last-child { border-bottom: none; }
+    .places-suggestion:hover { background: var(--bg); }
+    .places-suggestion .ps-main { font-size: 14px; font-weight: 500; color: var(--text); }
+    .places-suggestion .ps-sub { font-size: 12px; color: var(--text-muted); margin-top: 1px; }
+    .places-autofilled { font-size: 11px; color: var(--accent); margin-top: 5px; display: none; }
+
+    /* ── LOADING ── */
+    .loading { padding: 3rem; text-align: center; color: var(--text-muted); font-size: 14px; }
+
+    @media (max-width: 640px) {
+      .stats-bar { grid-template-columns: repeat(2,1fr); padding: 0.75rem 1rem; gap: 8px; }
+      .stat { padding: 10px 12px; }
+      .stat-val { font-size: 20px; }
+      .toolbar { padding: 0 1rem 0.75rem; gap: 6px; }
+      .toolbar select, .toolbar input[type=text] { font-size: 13px; padding: 6px 8px; }
+      .toolbar input[type=text] { min-width: 70px; }
+      .topbar { padding: 0 1rem; height: 50px; }
+      .topbar h1 { font-size: 18px; }
+      .topbar-sub { display: none; }
+      .table-wrap { padding: 0 0 1.5rem; }
+      table { font-size: 12px; }
+      th { padding: 8px 8px; font-size: 10px; }
+      td { padding: 8px 8px; }
+      .map-section { padding: 0 1rem 1.5rem; }
+      #map-leaflet { height: 400px; }
+      .form-row { grid-template-columns: 1fr; }
+      .modal { padding: 1.25rem 1rem 1.5rem; }
+      .modal-overlay { align-items: flex-end; padding: 0; }
+      .modal { border-radius: 14px 14px 0 0; max-height: 92vh; }
+      .form-group input[type=text],
+      .form-group input[type=number],
+      .form-group select,
+      .form-group textarea { font-size: 16px; padding: 10px 11px; }
+      .btn-primary { padding: 8px 14px; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ══ LOGIN SCREEN ══ -->
+<div id="login-screen">
+  <div class="login-card">
+    <h1>Chicago Eats</h1>
+    <p>Sign in to access your list</p>
+    <div class="login-field">
+      <label>Email</label>
+      <input type="email" id="login-email" placeholder="you@example.com" />
+    </div>
+    <div class="login-field">
+      <label>Password</label>
+      <input type="password" id="login-password" placeholder="••••••••" onkeydown="if(event.key==='Enter')doLogin()" />
+    </div>
+    <button class="login-btn" onclick="doLogin()">Sign in</button>
+    <div class="login-error" id="login-error"></div>
+  </div>
+</div>
+
+<!-- ══ MAIN APP ══ -->
+<div id="app">
+  <div class="topbar">
+    <div class="topbar-left">
+      <h1>Chicago Eats</h1>
+      <span class="topbar-sub" id="topbar-email"></span>
+    </div>
+    <div class="topbar-right">
+      <div style="display:flex;gap:6px;">
+        <button class="btn btn-sm" id="tab-table" onclick="switchTab('table')">Table</button>
+        <button class="btn btn-sm" id="tab-map" onclick="switchTab('map')">Map</button>
+      </div>
+      <button class="signout-btn" onclick="doSignOut()">Sign out</button>
+    </div>
+  </div>
+
+  <div class="stats-bar">
+    <div class="stat"><div class="stat-label">On the list</div><div class="stat-val" id="s-total">—</div></div>
+    <div class="stat"><div class="stat-label">Tried</div><div class="stat-val" id="s-tried">—</div></div>
+    <div class="stat"><div class="stat-label">Avg rating</div><div class="stat-val" id="s-avg">—</div></div>
+    <div class="stat"><div class="stat-label">Accolades</div><div class="stat-val" id="s-acc">—</div></div>
+  </div>
+
+  <div class="toolbar">
+    <select id="f-hype" onchange="renderAll()">
+      <option value="">All hype</option>
+      <option value="2">❗❗ Must go</option>
+      <option value="1">❗ Interested</option>
+      <option value="list">📋 On my list</option>
+    </select>
+    <select id="f-cat" onchange="renderAll()"><option value="">All categories</option></select>
+    <select id="f-food" onchange="renderAll()"><option value="">All food types</option></select>
+    <select id="f-price" onchange="renderAll()">
+      <option value="">Any price</option>
+      <option value="$">$</option><option value="$$">$$</option><option value="$$$">$$$</option><option value="$$$$">$$$$</option>
+    </select>
+    <select id="f-accolade" onchange="renderAll()">
+      <option value="">Any accolade</option>
+      <option value="michelin1">Michelin ★</option>
+      <option value="michelin2">Michelin ★★</option>
+      <option value="michelin3">Michelin ★★★</option>
+      <option value="bib">Bib Gourmand</option>
+      <option value="jb">James Beard</option>
+    </select>
+    <select id="f-tried" onchange="renderAll()">
+      <option value="">All places</option>
+      <option value="yes">Tried</option>
+      <option value="no">Want to try</option>
+    </select>
+    <input type="text" id="f-search" placeholder="Search..." oninput="renderAll()" />
+    <button class="btn btn-primary" onclick="openAdd()">+ Add</button>
+  </div>
+
+  <div id="view-table">
+    <div class="table-wrap">
+      <table>
+        <thead><tr id="thead-row"></tr></thead>
+        <tbody id="tbody"></tbody>
+        <tfoot><tr><td colspan="12"><div class="add-row" onclick="openAdd()">+ Add place</div></td></tr></tfoot>
+      </table>
+    </div>
+  </div>
+
+  <div id="view-map" style="display:none">
+    <div class="map-section">
+      <div id="map-leaflet"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ ADD/EDIT MODAL ══ -->
+<div class="modal-overlay" id="place-modal" onclick="maybeCloseModal(event,'place-modal')">
+  <div class="modal" onclick="event.stopPropagation()">
+    <h2 id="modal-title">Add a place</h2>
+    <div class="form-group">
+      <label>Name * <span id="autofill-notice" class="places-autofilled">✓ Auto-filled</span></label>
+      <div class="places-wrap">
+        <input type="text" id="f-name" placeholder="Search a restaurant name..." autocomplete="off" oninput="onNameInput()" />
+        <div id="places-suggestions"></div>
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group" style="grid-column:1/-1">
+        <label>Category</label>
+        <div class="tag-pool" id="cat-pool"></div>
+        <div class="new-tag-row">
+          <input type="text" id="new-cat-input" placeholder="Add new category..." onkeydown="if(event.key==='Enter'){addNewCat();event.preventDefault()}" />
+          <button class="btn btn-sm" onclick="addNewCat()">Add</button>
+        </div>
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group" style="grid-column:1/-1">
+        <label>Food types</label>
+        <div class="tag-pool" id="tag-pool"></div>
+        <div class="new-tag-row">
+          <input type="text" id="new-tag-input" placeholder="Add new food type..." onkeydown="if(event.key==='Enter'){addNewTag();event.preventDefault()}" />
+          <button class="btn btn-sm" onclick="addNewTag()">Add</button>
+        </div>
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>Neighborhood</label>
+        <input type="text" id="f-neighborhood" placeholder="e.g. West Loop" />
+      </div>
+      <div class="form-group">
+        <label>Price range</label>
+        <select id="f-price-modal">
+          <option value="$">$ Budget</option>
+          <option value="$$" selected>$$ Mid</option>
+          <option value="$$$">$$$ Upscale</option>
+          <option value="$$$$">$$$$ Fine dining</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-group">
+      <label>Hype <span style="font-weight:400;text-transform:none;letter-spacing:0;color:var(--text-faint)">(optional)</span></label>
+      <div style="display:flex;gap:6px;margin-top:4px;flex-wrap:wrap;">
+        <button type="button" id="hype-btn-none" class="hype-opt active" onclick="selectHype(null)">None</button>
+        <button type="button" id="hype-btn-list" class="hype-opt" onclick="selectHype('list')">📋 On my list</button>
+        <button type="button" id="hype-btn-1" class="hype-opt" onclick="selectHype('1')">❗ Interested</button>
+        <button type="button" id="hype-btn-2" class="hype-opt" onclick="selectHype('2')">❗❗ Must go</button>
+      </div>
+    </div>
+    <div class="form-group">
+      <label>Maps URL</label>
+      <input type="text" id="f-maps" placeholder="Paste Google Maps link..." />
+    </div>
+    <div class="section-div">Accolades</div>
+    <div class="accolade-grid">
+      <div class="accolade-row">
+        <label><input type="checkbox" id="ac-m1" /><span class="badge badge-m1">Michelin ★</span></label>
+        <label><input type="checkbox" id="ac-m2" /><span class="badge badge-m2">Michelin ★★</span></label>
+        <label><input type="checkbox" id="ac-m3" /><span class="badge badge-m3">Michelin ★★★</span></label>
+      </div>
+      <div class="accolade-row">
+        <label><input type="checkbox" id="ac-bib" /><span class="badge badge-bib">Bib Gourmand</span></label>
+        <label><input type="checkbox" id="ac-jb" /><span class="badge badge-jb">James Beard</span></label>
+      </div>
+    </div>
+    <div class="section-div">Notes</div>
+    <div class="form-group">
+      <textarea id="f-notes" placeholder="Must-order dishes, tips, who told you about it..."></textarea>
+    </div>
+    <div class="modal-footer">
+      <button class="delete-link" id="modal-delete-btn" style="display:none" onclick="confirmDelete()">Delete place</button>
+      <div style="display:flex;gap:8px;margin-left:auto">
+        <button class="btn" onclick="closeModal('place-modal')">Cancel</button>
+        <button class="btn btn-primary" onclick="savePlace()">Save</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ RATING MODAL ══ -->
+<div class="modal-overlay" id="rating-modal" onclick="maybeCloseModal(event,'rating-modal')">
+  <div class="rating-modal" onclick="event.stopPropagation()">
+    <h3 id="rating-name"></h3>
+    <p>How was it?</p>
+    <div class="star-row">
+      <button class="star-btn" onclick="setStars(1)">★</button>
+      <button class="star-btn" onclick="setStars(2)">★</button>
+      <button class="star-btn" onclick="setStars(3)">★</button>
+      <button class="star-btn" onclick="setStars(4)">★</button>
+      <button class="star-btn" onclick="setStars(5)">★</button>
+    </div>
+    <div class="rating-actions">
+      <button class="btn" onclick="closeModal('rating-modal')">Cancel</button>
+      <button class="btn btn-primary" onclick="saveRating()">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ INLINE DROPDOWN ══ -->
+<div id="inline-dd">
+  <input type="text" id="dd-input" placeholder="" onkeydown="if(event.key==='Enter')addDDOption()" />
+  <div id="dd-options"></div>
+</div>
+
+<script>
+// ══════════════════════════════════════════════
+// CONFIGURATION — replace these two values
+// ══════════════════════════════════════════════
+const SUPABASE_URL = 'https://gszpfntqgkppixzfxlqp.supabase.co'
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdzenBmbnRxZ2twcGl4emZ4bHFwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQyMjQ5OTYsImV4cCI6MjA4OTgwMDk5Nn0.bsbMk212YJ2FZV8j-m02Mnktjy4wgxGGHF7y1kjqcWc'
+// ══════════════════════════════════════════════
+
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
+
+let places = []
+let allFoodTags = []
+let allCustomCats = []
+let selectedTags = []
+let selectedCats = []
+let editingId = null
+let ratingTargetId = null
+let pendingStars = 0
+let currentTab = 'table'
+let sortCol = null, sortDir = 1
+let inlineTarget = null
+
+// ── AUTH ──────────────────────────────────────
+async function init() {
+  const { data: { session } } = await sb.auth.getSession()
+  if (session) showApp(session.user)
+}
+
+async function doLogin() {
+  const email = document.getElementById('login-email').value.trim()
+  const password = document.getElementById('login-password').value
+  document.getElementById('login-error').textContent = ''
+  const { data, error } = await sb.auth.signInWithPassword({ email, password })
+  if (error) { document.getElementById('login-error').textContent = error.message; return }
+  showApp(data.user)
+}
+
+async function doSignOut() {
+  await sb.auth.signOut()
+  document.getElementById('app').style.display = 'none'
+  document.getElementById('login-screen').style.display = 'flex'
+  document.getElementById('login-password').value = ''
+}
+
+async function showApp(user) {
+  document.getElementById('login-screen').style.display = 'none'
+  document.getElementById('app').style.display = 'block'
+  document.getElementById('topbar-email').textContent = user.email
+  await loadData()
+}
+
+// ── DATA LOADING ──────────────────────────────
+async function loadData() {
+  const [{ data: pd }, { data: td }, { data: cd }] = await Promise.all([
+    sb.from('places').select('*').order('created_at', { ascending: false }),
+    sb.from('food_tags').select('name'),
+    sb.from('custom_cats').select('name'),
+  ])
+  places = (pd || []).map(fromDB)
+  if (td?.length) allFoodTags = [...new Set([...allFoodTags, ...td.map(t => t.name)])]
+  if (cd?.length) allCustomCats = [...new Set([...allCustomCats, ...cd.map(c => c.name)])]
+  renderAll()
+}
+
+function fromDB(p) {
+  return {
+    id: p.id,
+    name: p.name,
+    customCat: p.custom_cat || '',
+    foodTags: p.food_tags || [],
+    price: p.price || '$$',
+    neighborhood: p.neighborhood || '',
+    maps: p.maps_url || '',
+    hype: p.hype_manual || null,
+    rating: p.rating || null,
+    tried: p.tried || false,
+    notes: p.notes || '',
+    accolades: p.accolades || {},
+  }
+}
+
+function toDB(d) {
+  return {
+    name: d.name,
+    custom_cat: d.customCat,
+    food_tags: d.foodTags,
+    price: d.price,
+    neighborhood: d.neighborhood,
+    maps_url: d.maps,
+    hype_manual: d.hype,
+    notes: d.notes,
+    accolades: d.accolades,
+    tried: d.tried || false,
+    rating: d.rating || null,
+  }
+}
+
+// ── CRUD ──────────────────────────────────────
+async function savePlace() {
+  const name = document.getElementById('f-name').value.trim()
+  if (!name) { alert('Name is required.'); return }
+  const hypeVal = window._selectedHype || null
+  const data = {
+    name,
+    customCat: selectedCats.join(','),
+    foodTags: [...selectedTags],
+    price: document.getElementById('f-price-modal').value,
+    neighborhood: document.getElementById('f-neighborhood').value.trim(),
+    maps: document.getElementById('f-maps').value.trim(),
+    hype: hypeVal,
+    notes: document.getElementById('f-notes').value.trim(),
+    accolades: {
+      michelin1: document.getElementById('ac-m1').checked,
+      michelin2: document.getElementById('ac-m2').checked,
+      michelin3: document.getElementById('ac-m3').checked,
+      bib: document.getElementById('ac-bib').checked,
+      jb: document.getElementById('ac-jb').checked,
+    }
+  }
+  if (editingId) {
+    await sb.from('places').update(toDB(data)).eq('id', editingId)
+    const idx = places.findIndex(p => p.id === editingId)
+    if (idx !== -1) places[idx] = { ...places[idx], ...data }
+  } else {
+    const { data: row } = await sb.from('places').insert(toDB(data)).select().single()
+    if (row) places.unshift(fromDB(row))
+  }
+  closeModal('place-modal')
+  renderAll()
+}
+
+async function confirmDelete() {
+  if (!editingId || !confirm('Remove this place?')) return
+  await sb.from('places').delete().eq('id', editingId)
+  places = places.filter(p => p.id !== editingId)
+  closeModal('place-modal')
+  renderAll()
+}
+
+async function saveRating() {
+  if (!ratingTargetId) return
+  const update = { tried: true, rating: pendingStars || null }
+  await sb.from('places').update(update).eq('id', ratingTargetId)
+  const p = places.find(x => x.id === ratingTargetId)
+  if (p) { p.tried = true; p.rating = pendingStars || null }
+  closeModal('rating-modal')
+  renderAll()
+}
+
+async function untryPlace(id) {
+  if (!confirm('Remove tried status and rating?')) return
+  await sb.from('places').update({ tried: false, rating: null }).eq('id', id)
+  const p = places.find(x => x.id === id)
+  if (p) { p.tried = false; p.rating = null }
+  renderAll()
+}
+
+async function saveInlineField(id, field, value) {
+  await sb.from('places').update({ custom_cat: value }).eq('id', id)
+  const p = places.find(x => x.id === id)
+  if (p) p.customCat = value
+  renderAll()
+}
+
+// ── FILTERS ───────────────────────────────────
+function getFiltered() {
+  const fHype = document.getElementById('f-hype').value
+  const fCat = document.getElementById('f-cat').value
+  const fFood = document.getElementById('f-food').value
+  const fPrice = document.getElementById('f-price').value
+  const fAcc = document.getElementById('f-accolade').value
+  const fTried = document.getElementById('f-tried').value
+  const fSearch = document.getElementById('f-search').value.toLowerCase()
+  return places.filter(p => {
+    if (fHype && (p.hype || 'list') !== fHype) return false
+    if (fCat && !(p.customCat||'').split(',').includes(fCat)) return false
+    if (fFood && !(p.foodTags||[]).includes(fFood)) return false
+    if (fPrice && p.price !== fPrice) return false
+    if (fAcc && !p.accolades?.[fAcc]) return false
+    if (fTried === 'yes' && !p.tried) return false
+    if (fTried === 'no' && p.tried) return false
+    if (fSearch && ![p.name,p.customCat,p.neighborhood].some(v=>(v||'').toLowerCase().includes(fSearch))) return false
+    return true
+  })
+}
+
+// ── RENDER ────────────────────────────────────
+function renderAll() {
+  updateFilterSelects()
+  renderStats()
+  if (currentTab === 'table') renderTable()
+}
+
+function updateFilterSelects() {
+  const update = (id, vals, label) => {
+    const sel = document.getElementById(id), cur = sel.value
+    sel.innerHTML = `<option value="">${label}</option>` + [...new Set(vals.filter(Boolean))].sort().map(v => `<option value="${v}"${v===cur?' selected':''}>${v}</option>`).join('')
+  }
+  const allCats = [...new Set(places.flatMap(p=>(p.customCat||'').split(',').filter(Boolean)))]
+  update('f-cat', allCats, 'All categories')
+  update('f-food', allFoodTags, 'All food types')
+}
+
+function renderStats() {
+  document.getElementById('s-total').textContent = places.length
+  document.getElementById('s-tried').textContent = places.filter(p=>p.tried).length
+  const rated = places.filter(p=>p.rating)
+  document.getElementById('s-avg').textContent = rated.length ? (rated.reduce((a,p)=>a+p.rating,0)/rated.length).toFixed(1)+'★' : '—'
+  document.getElementById('s-acc').textContent = places.filter(p=>p.accolades&&Object.values(p.accolades).some(Boolean)).length
+}
+
+function hypeSymbol(p) {
+  if (p.hype === '2') return '<span class="hype-sym">❗❗</span>'
+  if (p.hype === '1') return '<span class="hype-sym">❗</span>'
+  if (p.hype === 'list') return '<span class="hype-list">📋</span>'
+  return '<span style="color:var(--text-faint);font-size:12px;">—</span>'
+}
+
+function hypeOrder(p) {
+  if (p.hype === '2') return 3
+  if (p.hype === '1') return 2
+  if (p.hype === 'list') return 1
+  return 0
+}
+
+function selectHype(val) {
+  window._selectedHype = val
+  const map = { null: 'none', list: 'list', '1': '1', '2': '2' }
+  ;['none','list','1','2'].forEach(k => {
+    const el = document.getElementById('hype-btn-'+k)
+    if (el) el.classList.toggle('active', k === String(val === null ? 'none' : val))
+  })
+}
+
+function accoladeHTML(ac) {
+  if (!ac) return ''
+  let out = []
+  if (ac.michelin3) out.push('<span class="badge badge-m3">★★★</span>')
+  else if (ac.michelin2) out.push('<span class="badge badge-m2">★★</span>')
+  else if (ac.michelin1) out.push('<span class="badge badge-m1">★</span>')
+  if (ac.bib) out.push('<span class="badge badge-bib">Bib</span>')
+  if (ac.jb) out.push('<span class="badge badge-jb">JB</span>')
+  return out.join(' ')
+}
+
+function renderTable() {
+  const list = getFiltered().slice()
+  if (sortCol) list.sort((a,b) => {
+    let va = sortCol === 'hype' ? hypeOrder(a) : (a[sortCol] ?? '')
+    let vb = sortCol === 'hype' ? hypeOrder(b) : (b[sortCol] ?? '')
+    if (sortCol === 'price') { va = (va||'').length; vb = (vb||'').length }
+    if (va < vb) return -sortDir; if (va > vb) return sortDir; return 0
+  })
+  const arr = c => sortCol===c ? (sortDir===1?' ↑':' ↓') : ''
+  const cols = [
+    {k:'name',l:'Name'},{k:'customCat',l:'Category'},{k:'foodTags',l:'Food types'},
+    {k:'neighborhood',l:'Area'},{k:'price',l:'Price'},
+    {k:'hype',l:'Hype'},{k:'accolades',l:'Accolades'},{k:'rating',l:'Rating'},{k:'tried',l:'Status'},{k:'_map',l:''}
+  ]
+  document.getElementById('thead-row').innerHTML = cols.map(c =>
+    `<th onclick="sortBy('${c.k}')">${c.l}${arr(c.k)}</th>`
+  ).join('')
+  document.getElementById('tbody').innerHTML = list.map(p => {
+    const catTags = (p.customCat||'').split(',').filter(Boolean).map(c=>`<span class="badge badge-cat">${c}</span>`).join(' ')
+    const foodBadges = (p.foodTags||[]).map(t=>`<span class="badge badge-food">${t}</span>`).join(' ')
+    const triedBtn = p.tried
+      ? `<button class="btn-tried is-tried" onclick="event.stopPropagation();untryPlace(${p.id})">${p.rating ? '★'.repeat(p.rating) : 'Tried ✓'}</button>`
+      : `<button class="btn-tried" onclick="event.stopPropagation();openRating(${p.id})">Mark tried</button>`
+    const mapLink = p.maps ? `<a href="${p.maps}" target="_blank" style="font-size:12px;color:var(--blue);text-decoration:none;" onclick="event.stopPropagation()">Maps ↗</a>` : ''
+    const ratingCell = p.tried
+      ? (p.rating ? `<span class="stars-gold">${'★'.repeat(p.rating)}${'☆'.repeat(5-p.rating)}</span>` : '<span style="color:var(--text-faint);font-size:12px;">not rated</span>')
+      : '—'
+    return `<tr onclick="openEdit(${p.id})" style="cursor:pointer">
+      <td style="font-weight:500;white-space:nowrap">${p.name}</td>
+      <td><div style="display:flex;flex-wrap:wrap;gap:3px">${catTags || '<span style="color:var(--text-faint);font-size:12px">—</span>'}</div></td>
+      <td><div style="display:flex;flex-wrap:wrap;gap:3px">${foodBadges || '<span style="color:var(--text-faint);font-size:12px">—</span>'}</div></td>
+      <td style="color:var(--text-muted);white-space:nowrap">${p.neighborhood||'—'}</td>
+      <td>${p.price}</td>
+      <td>${hypeSymbol(p)}</td>
+      <td><div style="display:flex;gap:3px;flex-wrap:wrap">${accoladeHTML(p.accolades)}</div></td>
+      <td>${ratingCell}</td>
+      <td onclick="event.stopPropagation()">${triedBtn}</td>
+      <td>${mapLink}</td>
+    </tr>`
+  }).join('')
+}
+
+function sortBy(col) {
+  if (['_map','accolades','foodTags'].includes(col)) return
+  if (sortCol === col) sortDir *= -1; else { sortCol = col; sortDir = 1 }
+  renderTable()
+}
+
+let _map = null
+let _markers = []
+
+async function geocodePlace(name, neighborhood) {
+  try {
+    const q = encodeURIComponent([name, neighborhood, 'Chicago'].filter(Boolean).join(', '))
+    const res = await fetch(`https://nominatim.openstreetmap.org/search?q=${q}&format=json&limit=1&countrycodes=us`, { headers: { 'Accept-Language': 'en' } })
+    const data = await res.json()
+    if (data?.[0]) return { lat: parseFloat(data[0].lat), lng: parseFloat(data[0].lon) }
+  } catch(e) {}
+  return null
+}
+
+async function renderMap() {
+  const list = getFiltered()
+
+  if (!_map) {
+    _map = L.map('map-leaflet').setView([41.8827, -87.6233], 12)
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '© OpenStreetMap contributors', maxZoom: 19
+    }).addTo(_map)
+  }
+
+  // Clear existing markers
+  _markers.forEach(m => _map.removeLayer(m))
+  _markers = []
+
+  const bounds = []
+
+  for (const p of list) {
+    let lat = null, lng = null
+
+    // Try to extract coords from Maps URL first
+    if (p.maps) {
+      const m = p.maps.match(/@(-?\d+\.\d+),(-?\d+\.\d+)/)
+      if (m) { lat = parseFloat(m[1]); lng = parseFloat(m[2]) }
+    }
+
+    // Fallback: geocode by name + neighborhood via Nominatim
+    if (!lat) {
+      const coords = await geocodePlace(p.name, p.neighborhood)
+      if (coords) { lat = coords.lat; lng = coords.lng }
+    }
+
+    if (!lat) continue
+
+    bounds.push([lat, lng])
+    const hypeLabel = p.hype === '2' ? '❗❗' : p.hype === '1' ? '❗' : '📋'
+    const triedLine = p.tried ? (p.rating ? '<br>' + '★'.repeat(p.rating) + '☆'.repeat(5 - p.rating) : '<br>Tried') : ''
+    const mapsLink = p.maps ? `<br><a href="${p.maps}" target="_blank" style="color:#1a4a7a;font-size:12px;">Open in Maps ↗</a>` : ''
+    const popup = `<strong>${p.name}</strong>${p.neighborhood ? '<br><span style="color:#888">' + p.neighborhood + '</span>' : ''}<br>${hypeLabel} &nbsp;${p.price}${triedLine}${mapsLink}`
+    const marker = L.marker([lat, lng]).addTo(_map).bindPopup(popup)
+    _markers.push(marker)
+  }
+
+  if (bounds.length > 0) {
+    _map.fitBounds(bounds, { padding: [50, 50], maxZoom: 14 })
+  }
+
+  setTimeout(() => _map.invalidateSize(), 150)
+}
+
+// ── TAB ───────────────────────────────────────
+function switchTab(tab) {
+  currentTab = tab
+  document.getElementById('view-table').style.display = tab === 'table' ? 'block' : 'none'
+  document.getElementById('view-map').style.display = tab === 'map' ? 'block' : 'none'
+  document.getElementById('tab-table').style.fontWeight = tab === 'table' ? '500' : '400'
+  document.getElementById('tab-map').style.fontWeight = tab === 'map' ? '500' : '400'
+  if (tab === 'map') setTimeout(() => renderMap(), 50)
+  else { renderAll() }
+}
+
+// ── MODALS ────────────────────────────────────
+function openAdd() {
+  editingId = null; selectedTags = []; selectedCats = []
+  document.getElementById('modal-title').textContent = 'Add a place'
+  document.getElementById('modal-delete-btn').style.display = 'none'
+  const ids = ['f-name','f-neighborhood','f-maps','f-notes']
+  ids.forEach(id => document.getElementById(id).value = '')
+  document.getElementById('f-price-modal').value = '$$'
+  ;['ac-m1','ac-m2','ac-m3','ac-bib','ac-jb'].forEach(id => document.getElementById(id).checked = false)
+  selectHype(null)
+  renderTagPool(); renderCatPool()
+  document.getElementById('place-modal').classList.add('open')
+}
+
+function openEdit(id) {
+  const p = places.find(x => x.id === id)
+  if (!p) return
+  editingId = id
+  selectedTags = [...(p.foodTags||[])]
+  selectedCats = (p.customCat||'').split(',').filter(Boolean)
+  document.getElementById('modal-title').textContent = 'Edit place'
+  document.getElementById('modal-delete-btn').style.display = 'block'
+  document.getElementById('f-name').value = p.name
+  document.getElementById('f-neighborhood').value = p.neighborhood||''
+  document.getElementById('f-maps').value = p.maps||''
+  document.getElementById('f-notes').value = p.notes||''
+  document.getElementById('f-price-modal').value = p.price||'$$'
+  selectHype(p.hype || null)
+  const ac = p.accolades||{}
+  ;['m1','m2','m3','bib','jb'].forEach(k => document.getElementById('ac-'+k).checked = !!ac[k === 'm1' ? 'michelin1' : k === 'm2' ? 'michelin2' : k === 'm3' ? 'michelin3' : k])
+  renderTagPool(); renderCatPool()
+  document.getElementById('place-modal').classList.add('open')
+}
+
+function closeModal(id) {
+  document.getElementById(id).classList.remove('open')
+}
+
+function maybeCloseModal(e, id) {
+  if (e.target === document.getElementById(id)) closeModal(id)
+}
+
+// ── FOOD TAGS ─────────────────────────────────
+function renderTagPool() {
+  const pool = document.getElementById('tag-pool')
+  if (!pool) return
+  pool.innerHTML = allFoodTags.sort().map(t => {
+    const on = selectedTags.includes(t)
+    return `<span class="tag-pill${on?' on':''}">
+      <span onclick="toggleTag('${t}')" style="cursor:pointer">${t}</span>
+      <span class="tag-del" onclick="deleteTag('${t}')" title="Delete">×</span>
+    </span>`
+  }).join('')
+}
+
+function toggleTag(tag) {
+  selectedTags = selectedTags.includes(tag) ? selectedTags.filter(t=>t!==tag) : [...selectedTags, tag]
+  renderTagPool()
+}
+
+async function deleteTag(tag) {
+  if (!confirm(`Remove "${tag}" from food types everywhere?`)) return
+  allFoodTags = allFoodTags.filter(t => t !== tag)
+  selectedTags = selectedTags.filter(t => t !== tag)
+  await sb.from('food_tags').delete().eq('name', tag)
+  // Remove from any places that had it
+  places.forEach(p => { p.foodTags = (p.foodTags||[]).filter(t => t !== tag) })
+  renderTagPool()
+}
+
+async function addNewTag() {
+  const input = document.getElementById('new-tag-input')
+  const val = input.value.trim()
+  if (!val) return
+  const fmt = val.charAt(0).toUpperCase()+val.slice(1)
+  if (!allFoodTags.includes(fmt)) {
+    allFoodTags.push(fmt)
+    await sb.from('food_tags').upsert({ name: fmt })
+  }
+  if (!selectedTags.includes(fmt)) selectedTags.push(fmt)
+  input.value = ''
+  renderTagPool()
+}
+
+function renderCatPool() {
+  const pool = document.getElementById('cat-pool')
+  if (!pool) return
+  pool.innerHTML = allCustomCats.sort().map(c => {
+    const on = selectedCats.includes(c)
+    return `<span class="tag-pill${on?' on':''}">
+      <span onclick="toggleCat('${c}')" style="cursor:pointer">${c}</span>
+      <span class="tag-del" onclick="deleteCat('${c}')" title="Delete">×</span>
+    </span>`
+  }).join('')
+}
+
+function toggleCat(cat) {
+  selectedCats = selectedCats.includes(cat) ? selectedCats.filter(c=>c!==cat) : [...selectedCats, cat]
+  renderCatPool()
+}
+
+async function deleteCat(cat) {
+  if (!confirm(`Remove "${cat}" from categories everywhere?`)) return
+  allCustomCats = allCustomCats.filter(c => c !== cat)
+  selectedCats = selectedCats.filter(c => c !== cat)
+  await sb.from('custom_cats').delete().eq('name', cat)
+  places.forEach(p => {
+    p.customCat = (p.customCat||'').split(',').filter(c => c !== cat).join(',')
+  })
+  renderCatPool()
+}
+
+async function addNewCat() {
+  const input = document.getElementById('new-cat-input')
+  const val = input.value.trim()
+  if (!val) return
+  const fmt = val.charAt(0).toUpperCase()+val.slice(1)
+  if (!allCustomCats.includes(fmt)) {
+    allCustomCats.push(fmt)
+    await sb.from('custom_cats').upsert({ name: fmt })
+  }
+  if (!selectedCats.includes(fmt)) selectedCats.push(fmt)
+  input.value = ''
+  renderCatPool()
+}
+
+// ── RATING ────────────────────────────────────
+function openRating(id) {
+  ratingTargetId = id; pendingStars = 0
+  const p = places.find(x => x.id === id)
+  document.getElementById('rating-name').textContent = p?.name || ''
+  document.querySelectorAll('.star-btn').forEach(b => b.classList.remove('lit'))
+  document.getElementById('rating-modal').classList.add('open')
+}
+
+function setStars(n) {
+  pendingStars = n
+  document.querySelectorAll('.star-btn').forEach((b,i) => b.classList.toggle('lit', i < n))
+}
+
+// ── INLINE DROPDOWN (kept for any future inline edits) ───
+function openDD(e, id, field) {
+  e.stopPropagation()
+  closeDDOutside._skip = true
+  inlineTarget = { id, field }
+  const p = places.find(x => x.id === id)
+  const current = p?.[field] || ''
+  const opts = allCustomCats
+  const dd = document.getElementById('inline-dd')
+  document.getElementById('dd-input').placeholder = 'New category...'
+  document.getElementById('dd-input').value = ''
+  document.getElementById('dd-options').innerHTML = opts.sort().map(o =>
+    `<div class="dd-option${o===current?' selected':''}" onclick="selectDD('${o}')">${o}</div>`
+  ).join('')
+  const rect = e.currentTarget.getBoundingClientRect()
+  dd.style.left = rect.left + 'px'
+  dd.style.top = (rect.bottom + window.scrollY + 4) + 'px'
+  dd.classList.add('open')
+  setTimeout(() => document.getElementById('dd-input').focus(), 30)
+}
+
+function selectDD(val) {
+  if (!inlineTarget) return
+  saveInlineField(inlineTarget.id, inlineTarget.field, val)
+  closeDD()
+}
+
+async function addDDOption() {
+  const val = document.getElementById('dd-input').value.trim()
+  if (!val || !inlineTarget) return
+  const fmt = val.charAt(0).toUpperCase()+val.slice(1)
+  if (inlineTarget.field === 'customCat' && !allCustomCats.includes(fmt)) {
+    allCustomCats.push(fmt)
+    await sb.from('custom_cats').upsert({ name: fmt })
+  }
+  selectDD(fmt)
+}
+
+function closeDD() {
+  document.getElementById('inline-dd').classList.remove('open')
+  inlineTarget = null
+}
+
+function closeDDOutside(e) {
+  if (closeDDOutside._skip) { closeDDOutside._skip = false; return }
+  if (!document.getElementById('inline-dd').contains(e.target)) closeDD()
+}
+closeDDOutside._skip = false
+document.addEventListener('click', closeDDOutside)
+
+// ── BOOT ──────────────────────────────────────
+init()
+</script>
+
+<script>
+// ── PLACE SEARCH via Nominatim (OpenStreetMap) ──
+let _nameInputTimer = null
+
+async function onNameInput() {
+  const val = document.getElementById('f-name').value.trim()
+  document.getElementById('autofill-notice').style.display = 'none'
+  clearTimeout(_nameInputTimer)
+  if (val.length < 2) { hideSuggestions(); return }
+  _nameInputTimer = setTimeout(async () => {
+    try {
+      const query = encodeURIComponent(val + ' Chicago')
+      const res = await fetch(
+        `https://nominatim.openstreetmap.org/search?q=${query}&format=json&limit=8&addressdetails=1&countrycodes=us`,
+        { headers: { 'Accept-Language': 'en' } }
+      )
+      const results = await res.json()
+      const restaurants = results.filter(r =>
+        r.type === 'restaurant' || r.type === 'cafe' || r.type === 'bar' ||
+        r.type === 'fast_food' || r.type === 'pub' || r.type === 'food_court' ||
+        r.class === 'amenity'
+      )
+      const list = restaurants.length ? restaurants : results.slice(0, 6)
+      if (!list.length) { hideSuggestions(); return }
+      window._osmResults = list
+      const box = document.getElementById('places-suggestions')
+      box.innerHTML = list.map((r, i) => {
+        const name = r.name || r.display_name.split(',')[0]
+        const sub = r.address
+          ? [r.address.neighbourhood || r.address.suburb, r.address.city_district || r.address.city].filter(Boolean).join(', ')
+          : r.display_name.split(',').slice(1, 3).join(',').trim()
+        return `<div class="places-suggestion" onclick="pickPlace(${i})">
+          <div class="ps-main">${name}</div>
+          <div class="ps-sub">${sub}</div>
+        </div>`
+      }).join('')
+      box.style.display = 'block'
+    } catch(e) {
+      console.error('Search error:', e)
+      hideSuggestions()
+    }
+  }, 350)
+}
+
+function pickPlace(i) {
+  hideSuggestions()
+  const r = window._osmResults?.[i]
+  if (!r) return
+  const name = r.name || r.display_name.split(',')[0]
+  document.getElementById('f-name').value = name
+  const hood = r.address?.neighbourhood || r.address?.suburb || r.address?.city_district || ''
+  if (hood) document.getElementById('f-neighborhood').value = hood
+  const mapsQuery = encodeURIComponent(name + ' ' + (r.display_name || ''))
+  document.getElementById('f-maps').value = `https://www.google.com/maps/search/?api=1&query=${mapsQuery}`
+  document.getElementById('autofill-notice').style.display = 'inline'
+}
+
+function hideSuggestions() {
+  const b = document.getElementById('places-suggestions')
+  if (b) b.style.display = 'none'
+}
+
+document.addEventListener('click', e => {
+  if (!e.target.closest('.places-wrap')) hideSuggestions()
+})
+</script>
+</body>
+</html>
