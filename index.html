@@ -517,6 +517,15 @@ function toDB(d) {
 async function savePlace() {
   const name = document.getElementById('f-name').value.trim()
   if (!name) { alert('Name is required.'); return }
+  // Duplicate check — case-insensitive, ignores leading "The/A/An"
+  if (!editingId) {
+    const normNew = normaliseName(name)
+    const dupe = places.find(p => normaliseName(p.name) === normNew)
+    if (dupe) {
+      const go = confirm(`"${dupe.name}" is already on your list. Add anyway?`)
+      if (!go) return
+    }
+  }
   const hypeVal = (window._selectedHype === undefined || window._selectedHype === null) ? null : window._selectedHype
   const data = {
     name,
@@ -629,6 +638,7 @@ function renderStats() {
 }
 
 function hypeSymbol(p) {
+  if (p.tried) return ''
   if (p.hype === '2') return '<span class="hype-sym">❗❗</span>'
   if (p.hype === '1') return '<span class="hype-sym">❗</span>'
   if (p.hype === 'list') return '<span class="hype-list">📋</span>'
@@ -642,6 +652,13 @@ function hypeOrder(p) {
   return 0
 }
 
+
+function normaliseName(name) {
+  return name.toLowerCase()
+    .replace(/^(the|a|an)\s+/i, '')
+    .replace(/[^a-z0-9]/g, '')
+    .trim()
+}
 function selectHype(val) {
   window._selectedHype = val === undefined ? null : val
   const active = val === null || val === undefined ? 'none' : String(val)
@@ -665,8 +682,8 @@ function accoladeHTML(ac) {
 function renderTable() {
   const list = getFiltered().slice()
   if (sortCol) list.sort((a,b) => {
-    let va = sortCol === 'hype' ? hypeOrder(a) : (a[sortCol] ?? '')
-    let vb = sortCol === 'hype' ? hypeOrder(b) : (b[sortCol] ?? '')
+    let va = sortCol === 'hype' ? hypeOrder(a) : sortCol === 'name' ? normaliseName(a.name||'') : (a[sortCol] ?? '')
+    let vb = sortCol === 'hype' ? hypeOrder(b) : sortCol === 'name' ? normaliseName(b.name||'') : (b[sortCol] ?? '')
     if (sortCol === 'price') { va = (va||'').length; vb = (vb||'').length }
     if (va < vb) return -sortDir; if (va > vb) return sortDir; return 0
   })
