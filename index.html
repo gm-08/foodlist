@@ -78,13 +78,16 @@
 
     /* ── TABLE ── */
     .table-wrap { padding: 0 1.5rem 2rem; overflow-x: auto; }
-    table { width: 100%; border-collapse: collapse; background: var(--surface); border-radius: var(--radius); border: 1px solid var(--border); overflow: hidden; box-shadow: var(--shadow); }
+    table { width: 100%; border-collapse: separate; border-spacing: 0; background: var(--surface); border-radius: var(--radius); border: 1px solid var(--border); overflow: hidden; box-shadow: var(--shadow); }
     thead { background: var(--bg); }
     th { text-align: left; padding: 10px 12px; font-size: 11px; font-weight: 500; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.06em; border-bottom: 1px solid var(--border); cursor: pointer; white-space: nowrap; user-select: none; }
     th:hover { color: var(--text); }
+    th:first-child, td:first-child { position: sticky; left: 0; z-index: 2; background: var(--surface); box-shadow: 2px 0 4px rgba(0,0,0,0.06); }
+    thead th:first-child { background: var(--bg); z-index: 3; }
     td { padding: 10px 12px; border-bottom: 1px solid var(--border); vertical-align: middle; }
     tr:last-child td { border-bottom: none; }
     tbody tr:hover td { background: var(--bg); }
+    tbody tr:hover td:first-child { background: var(--bg); }
     .add-row { padding: 10px 12px; font-size: 13px; color: var(--text-muted); cursor: pointer; display: flex; align-items: center; gap: 6px; transition: color 0.12s; border-top: 1px solid var(--border); }
     .add-row:hover { color: var(--accent); background: var(--accent-light); }
 
@@ -161,7 +164,7 @@
     .accolade-row input[type=checkbox] { width: 14px; height: 14px; accent-color: var(--accent); cursor: pointer; }
 
     /* ── RATING MODAL ── */
-    .rating-modal { background: var(--surface); border-radius: 14px; padding: 2rem; width: 100%; max-width: 320px; text-align: center; box-shadow: var(--shadow-lg); }
+    .rating-modal { background: var(--surface); border-radius: 14px; padding: 2rem; width: 100%; max-width: 400px; text-align: center; box-shadow: var(--shadow-lg); }
     .rating-modal h3 { font-family: 'DM Serif Display', serif; font-size: 20px; font-weight: 400; margin-bottom: 6px; }
     .rating-modal p { font-size: 13px; color: var(--text-muted); margin-bottom: 1.25rem; }
     .star-row { display: flex; justify-content: center; gap: 6px; margin-bottom: 1.25rem; }
@@ -403,6 +406,10 @@
       <button class="star-btn" onclick="setStars(4)">★</button>
       <button class="star-btn" onclick="setStars(5)">★</button>
     </div>
+    <div style="margin-bottom:1rem;text-align:left">
+      <label style="display:block;font-size:11px;font-weight:500;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:5px">Notes (optional)</label>
+      <textarea id="rating-notes" placeholder="What did you think? Best dish, would you return..." style="width:100%;padding:9px 11px;border:1px solid var(--border);border-radius:var(--radius-sm);font-size:14px;font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);resize:vertical;min-height:72px;line-height:1.5;outline:none"></textarea>
+    </div>
     <div class="rating-actions">
       <button class="btn" onclick="closeModal('rating-modal')">Cancel</button>
       <button class="btn btn-primary" onclick="saveRating()">Save</button>
@@ -566,10 +573,11 @@ async function confirmDelete() {
 
 async function saveRating() {
   if (!ratingTargetId) return
-  const update = { tried: true, rating: pendingStars || null }
+  const notes = document.getElementById('rating-notes').value.trim()
+  const update = { tried: true, rating: pendingStars || null, notes: notes || null }
   await sb.from('places').update(update).eq('id', ratingTargetId)
   const p = places.find(x => x.id === ratingTargetId)
-  if (p) { p.tried = true; p.rating = pendingStars || null }
+  if (p) { p.tried = true; p.rating = pendingStars || null; p.notes = notes }
   closeModal('rating-modal')
   renderAll()
 }
@@ -700,7 +708,10 @@ function renderTable() {
     const catTags = (p.customCat||'').split(',').filter(Boolean).map(c=>`<span class="badge badge-cat">${c}</span>`).join(' ')
     const foodBadges = (p.foodTags||[]).map(t=>`<span class="badge badge-food">${t}</span>`).join(' ')
     const triedBtn = p.tried
-      ? `<button class="btn-tried is-tried" onclick="event.stopPropagation();untryPlace(${p.id})">${p.rating ? '★'.repeat(p.rating) : 'Tried ✓'}</button>`
+      ? `<div style="display:flex;gap:4px;align-items:center">
+           <button class="btn-tried is-tried" onclick="event.stopPropagation();openRating(${p.id})">${p.rating ? '★'.repeat(p.rating) : 'Tried ✓'}</button>
+           <button class="btn-tried" style="padding:4px 6px;font-size:11px;" onclick="event.stopPropagation();untryPlace(${p.id})" title="Remove tried">✕</button>
+         </div>`
       : `<button class="btn-tried" onclick="event.stopPropagation();openRating(${p.id})">Mark tried</button>`
     const mapLink = p.maps ? `<a href="${p.maps}" target="_blank" style="font-size:12px;color:var(--blue);text-decoration:none;" onclick="event.stopPropagation()">Maps ↗</a>` : ''
     const ratingCell = p.tried
@@ -810,9 +821,9 @@ function openAdd() {
   document.getElementById('f-price-modal').value = '$$'
   ;['ac-m1','ac-m2','ac-m3','ac-bib','ac-jb'].forEach(id => document.getElementById(id).checked = false)
   window._selectedHype = null
-  selectHype(null)
   renderTagPool(); renderCatPool()
   document.getElementById('place-modal').classList.add('open')
+  setTimeout(() => selectHype(null), 10)
 }
 
 function openEdit(id) {
@@ -828,11 +839,12 @@ function openEdit(id) {
   document.getElementById('f-maps').value = p.maps||''
   document.getElementById('f-notes').value = p.notes||''
   document.getElementById('f-price-modal').value = p.price||'$$'
-  selectHype(p.hype || null)
+  const _hypeToSet = p.hype || null
   const ac = p.accolades||{}
   ;['m1','m2','m3','bib','jb'].forEach(k => document.getElementById('ac-'+k).checked = !!ac[k === 'm1' ? 'michelin1' : k === 'm2' ? 'michelin2' : k === 'm3' ? 'michelin3' : k])
   renderTagPool(); renderCatPool()
   document.getElementById('place-modal').classList.add('open')
+  setTimeout(() => selectHype(_hypeToSet), 10)
 }
 
 function closeModal(id) {
@@ -932,7 +944,12 @@ function openRating(id) {
   ratingTargetId = id; pendingStars = 0
   const p = places.find(x => x.id === id)
   document.getElementById('rating-name').textContent = p?.name || ''
+  document.getElementById('rating-notes').value = p?.notes || ''
   document.querySelectorAll('.star-btn').forEach(b => b.classList.remove('lit'))
+  if (p?.rating) {
+    pendingStars = p.rating
+    document.querySelectorAll('.star-btn').forEach((b,i) => b.classList.toggle('lit', i < p.rating))
+  }
   document.getElementById('rating-modal').classList.add('open')
 }
 
