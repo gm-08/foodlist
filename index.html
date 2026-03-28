@@ -78,17 +78,13 @@
 
     /* ── TABLE ── */
     .table-wrap { padding: 0 1.5rem 2rem; overflow-x: auto; }
-    table { width: 100%; border-collapse: separate; border-spacing: 0; background: var(--surface); box-shadow: var(--shadow); }
-    .table-inner { border-radius: var(--radius); border: 1px solid var(--border); overflow: hidden; }
+    table { width: 100%; border-collapse: collapse; background: var(--surface); border-radius: var(--radius); border: 1px solid var(--border); overflow: hidden; box-shadow: var(--shadow); }
     thead { background: var(--bg); }
     th { text-align: left; padding: 10px 12px; font-size: 11px; font-weight: 500; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.06em; border-bottom: 1px solid var(--border); cursor: pointer; white-space: nowrap; user-select: none; }
     th:hover { color: var(--text); }
-    th:first-child, td:first-child { position: sticky; left: 0; z-index: 2; background: var(--surface); box-shadow: 2px 0 4px rgba(0,0,0,0.06); }
-    thead th:first-child { background: var(--bg); z-index: 3; }
     td { padding: 10px 12px; border-bottom: 1px solid var(--border); vertical-align: middle; }
     tr:last-child td { border-bottom: none; }
     tbody tr:hover td { background: var(--bg); }
-    tbody tr:hover td:first-child { background: var(--bg); }
     .add-row { padding: 10px 12px; font-size: 13px; color: var(--text-muted); cursor: pointer; display: flex; align-items: center; gap: 6px; transition: color 0.12s; border-top: 1px solid var(--border); }
     .add-row:hover { color: var(--accent); background: var(--accent-light); }
 
@@ -294,13 +290,13 @@
   </div>
 
   <div id="view-table">
-    <div class="table-wrap"><div class="table-inner">
+    <div class="table-wrap">
       <table>
         <thead><tr id="thead-row"></tr></thead>
         <tbody id="tbody"></tbody>
         <tfoot><tr><td colspan="12"><div class="add-row" onclick="openAdd()">+ Add place</div></td></tr></tfoot>
       </table>
-    </div></div>
+    </div>
   </div>
 
   <div id="view-map" style="display:none">
@@ -497,7 +493,7 @@ function fromDB(p) {
     price: p.price || '$$',
     neighborhood: p.neighborhood || '',
     maps: p.maps_url || '',
-    hype: p.hype_manual || null,
+    hype: p.hype_manual || null,  // 'list', '1', '2', or null
     rating: p.rating || null,
     tried: p.tried || false,
     notes: p.notes || '',
@@ -513,7 +509,7 @@ function toDB(d) {
     price: d.price,
     neighborhood: d.neighborhood,
     maps_url: d.maps,
-    hype_manual: d.hype,
+    hype_manual: d.hype || null,
     notes: d.notes,
     accolades: d.accolades,
     tried: d.tried || false,
@@ -669,12 +665,11 @@ function normaliseName(name) {
     .trim()
 }
 function selectHype(val) {
-  window._selectedHype = (val === undefined || val === null) ? null : String(val)
-  const active = window._selectedHype === null ? 'none' : window._selectedHype
-  ;['none','list','1','2'].forEach(k => {
-    const el = document.getElementById('hype-btn-'+k)
-    if (el) el.classList.toggle('active', k === active)
-  })
+  window._selectedHype = (val == null) ? null : String(val)
+  const active = window._selectedHype == null ? 'none' : window._selectedHype
+  document.querySelectorAll('.hype-opt').forEach(el => el.classList.remove('active'))
+  const target = document.getElementById('hype-btn-' + active)
+  if (target) target.classList.add('active')
 }
 
 function accoladeHTML(ac) {
@@ -824,7 +819,7 @@ function openAdd() {
   window._selectedHype = null
   renderTagPool(); renderCatPool()
   document.getElementById('place-modal').classList.add('open')
-  requestAnimationFrame(() => selectHype(null))
+  selectHype(null)
 }
 
 function openEdit(id) {
@@ -845,7 +840,7 @@ function openEdit(id) {
   ;['m1','m2','m3','bib','jb'].forEach(k => document.getElementById('ac-'+k).checked = !!ac[k === 'm1' ? 'michelin1' : k === 'm2' ? 'michelin2' : k === 'm3' ? 'michelin3' : k])
   renderTagPool(); renderCatPool()
   document.getElementById('place-modal').classList.add('open')
-  requestAnimationFrame(() => selectHype(_hypeToSet))
+  selectHype(_hypeToSet)
 }
 
 function closeModal(id) {
