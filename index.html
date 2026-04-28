@@ -105,6 +105,8 @@
     .badge-m2 { background: #f9d9cc; color: #6b2a12; }
     .badge-m3 { background: #c0392b; color: #fff; }
     .badge-bib { background: var(--blue-bg); color: var(--blue); }
+    .badge-new { background: #e8f5e9; color: #2e7d32; font-weight: 600; }
+    .badge-mg { background: #f3e5f5; color: #6a1b9a; }
     .badge-jb { background: var(--green-bg); color: var(--green-text); }
 
     /* ── HYPE SYMBOL ── */
@@ -136,10 +138,10 @@
     .dd-option.selected { color: var(--accent); font-weight: 500; }
 
     /* ── MODALS ── */
-    .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(15,15,12,0.4); z-index: 200; align-items: center; justify-content: center; padding: 1rem; }
-    .modal-overlay.open { display: flex; }
-    .modal { background: var(--surface); border-radius: 14px; padding: 1.75rem; width: 100%; max-width: 500px; max-height: 90vh; overflow-y: auto; box-shadow: var(--shadow-lg); }
-    .modal h2 { font-family: 'DM Serif Display', serif; font-size: 22px; font-weight: 400; margin-bottom: 1.25rem; }
+    .modal-overlay { display: none; position: fixed; inset: 0; z-index: 200; background: var(--bg); overflow-y: auto; }
+    .modal-overlay.open { display: block; }
+    .modal { background: var(--bg); max-width: 620px; margin: 0 auto; padding: 2rem 1.5rem 4rem; min-height: 100vh; }
+    .modal h2 { font-family: 'DM Serif Display', serif; font-size: 26px; font-weight: 400; margin-bottom: 1.5rem; }
     .form-group { margin-bottom: 1rem; }
     .form-group label { display: block; font-size: 11px; font-weight: 500; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 5px; }
     .form-group input[type=text], .form-group input[type=number], .form-group select, .form-group textarea {
@@ -169,6 +171,8 @@
     .accolade-row input[type=checkbox] { width: 14px; height: 14px; accent-color: var(--accent); cursor: pointer; }
 
     /* ── RATING MODAL ── */
+    .rating-overlay { display: none; position: fixed; inset: 0; background: rgba(15,15,12,0.4); z-index: 300; align-items: center; justify-content: center; padding: 1rem; }
+    .rating-overlay.open { display: flex; }
     .rating-modal { background: var(--surface); border-radius: 14px; padding: 2rem; width: 100%; max-width: 400px; text-align: center; box-shadow: var(--shadow-lg); }
     .rating-modal h3 { font-family: 'DM Serif Display', serif; font-size: 20px; font-weight: 400; margin-bottom: 6px; }
     .rating-modal p { font-size: 13px; color: var(--text-muted); margin-bottom: 1.25rem; }
@@ -220,8 +224,7 @@
       /* Modal — sheet from bottom */
       .form-row { grid-template-columns: 1fr; }
       .modal { padding: 1.25rem 1rem 1.5rem; }
-      .modal-overlay { align-items: flex-end; padding: 0; }
-      .modal { border-radius: 14px 14px 0 0; max-height: 92vh; }
+
       .form-group input[type=text],
       .form-group input[type=number],
       .form-group select,
@@ -302,6 +305,8 @@
       <label class="filter-label">Accolade</label>
       <select id="f-accolade" onchange="renderAll()">
         <option value="">All</option>
+        <option value="isNew">New</option>
+        <option value="michelinGuide">📖 Michelin Guide</option>
         <option value="michelin1">Michelin ★</option>
         <option value="michelin2">Michelin ★★</option>
         <option value="michelin3">Michelin ★★★</option>
@@ -345,6 +350,7 @@
 <!-- ══ ADD/EDIT MODAL ══ -->
 <div class="modal-overlay" id="place-modal" onclick="maybeCloseModal(event,'place-modal')">
   <div class="modal" onclick="event.stopPropagation()">
+    <button class="btn" style="margin-bottom:1.25rem" onclick="closeModal('place-modal')">← Back</button>
     <h2 id="modal-title">Add a place</h2>
     <div class="form-group">
       <label>Name * <span id="autofill-notice" class="places-autofilled">✓ Auto-filled</span></label>
@@ -405,6 +411,10 @@
     <div class="section-div">Accolades</div>
     <div class="accolade-grid">
       <div class="accolade-row">
+        <label><input type="checkbox" id="ac-new" /><span class="badge badge-new">New</span></label>
+        <label><input type="checkbox" id="ac-mg" /><span class="badge badge-mg">📖 Michelin Guide</span></label>
+      </div>
+      <div class="accolade-row">
         <label><input type="checkbox" id="ac-m1" /><span class="badge badge-m1">Michelin ★</span></label>
         <label><input type="checkbox" id="ac-m2" /><span class="badge badge-m2">Michelin ★★</span></label>
         <label><input type="checkbox" id="ac-m3" /><span class="badge badge-m3">Michelin ★★★</span></label>
@@ -421,7 +431,7 @@
     <div class="modal-footer">
       <button class="delete-link" id="modal-delete-btn" style="display:none" onclick="confirmDelete()">Delete place</button>
       <div style="display:flex;gap:8px;margin-left:auto">
-        <button class="btn" onclick="closeModal('place-modal')">Cancel</button>
+        <button class="btn" onclick="closeModal('place-modal')">← Back</button>
         <button class="btn btn-primary" onclick="savePlace()">Save</button>
       </div>
     </div>
@@ -429,7 +439,7 @@
 </div>
 
 <!-- ══ RATING MODAL ══ -->
-<div class="modal-overlay" id="rating-modal" onclick="maybeCloseModal(event,'rating-modal')">
+<div class="rating-overlay" id="rating-modal" onclick="if(event.target===this)closeModal('rating-modal')">
   <div class="rating-modal" onclick="event.stopPropagation()">
     <h3 id="rating-name"></h3>
     <p>How was it?</p>
@@ -578,6 +588,8 @@ async function savePlace() {
     hype: hypeVal,
     notes: document.getElementById('f-notes').value.trim(),
     accolades: {
+      isNew: document.getElementById('ac-new').checked,
+      michelinGuide: document.getElementById('ac-mg').checked,
       michelin1: document.getElementById('ac-m1').checked,
       michelin2: document.getElementById('ac-m2').checked,
       michelin3: document.getElementById('ac-m3').checked,
@@ -710,7 +722,7 @@ function renderStats() {
   document.getElementById('s-tried').textContent = places.filter(p=>p.tried).length
   const rated = places.filter(p=>p.rating)
   document.getElementById('s-avg').textContent = rated.length ? (rated.reduce((a,p)=>a+p.rating,0)/rated.length).toFixed(1)+'★' : '—'
-  document.getElementById('s-acc').textContent = places.filter(p=>p.accolades&&Object.values(p.accolades).some(Boolean)).length
+  document.getElementById('s-acc').textContent = places.filter(p=>p.accolades&&Object.values(p.accolades).some(v=>v===true)).length
 }
 
 function hypeSymbol(p) {
@@ -750,6 +762,8 @@ function selectHype(val) {
 function accoladeHTML(ac) {
   if (!ac) return ''
   let out = []
+  if (ac.isNew) out.push('<span class="badge badge-new">New</span>')
+  if (ac.michelinGuide) out.push('<span class="badge badge-mg">📖</span>')
   if (ac.michelin3) out.push('<span class="badge badge-m3">★★★</span>')
   else if (ac.michelin2) out.push('<span class="badge badge-m2">★★</span>')
   else if (ac.michelin1) out.push('<span class="badge badge-m1">★</span>')
@@ -770,7 +784,7 @@ function renderTable() {
   const cols = [
     {k:'name',l:'Name',cls:''},{k:'customCat',l:'Category',cls:''},{k:'foodTags',l:'Food types',cls:''},
     {k:'price',l:'Price',cls:''},
-    {k:'hype',l:'Hype',cls:''},{k:'accolades',l:'Accolades',cls:''},{k:'rating',l:'Status',cls:''},{k:'_map',l:'',cls:''}
+    {k:'hype',l:'Hype',cls:''},{k:'rating',l:'Status',cls:''},{k:'_map',l:'',cls:''}
   ]
   document.getElementById('thead-row').innerHTML = cols.map(c =>
     `<th class="${c.cls}" onclick="sortBy('${c.k}')">${c.l}${arr(c.k)}</th>`
@@ -789,13 +803,17 @@ function renderTable() {
       ? (p.rating ? `<span class="stars-gold">${'★'.repeat(p.rating)}${'☆'.repeat(5-p.rating)}</span>` : '<span style="color:var(--text-faint);font-size:12px;">not rated</span>')
       : '—'
     const nameTitle = [p.name, p.neighborhood].filter(Boolean).join(' · ')
+    const accBadges = accoladeHTML(p.accolades)
     return `<tr onclick="openEdit(${p.id})" style="cursor:pointer">
-      <td style="font-weight:500;max-width:130px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${nameTitle}">${p.name}${p.neighborhood ? `<br><span style="font-size:10px;font-weight:400;color:var(--text-faint)">${p.neighborhood}</span>` : ''}</td>
+      <td style="max-width:140px;min-width:90px" title="${nameTitle}">
+        <div style="font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${p.name}</div>
+        ${p.neighborhood ? `<div style="font-size:10px;color:var(--text-faint);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${p.neighborhood}</div>` : ''}
+        ${accBadges ? `<div style="display:flex;flex-wrap:wrap;gap:2px;margin-top:3px">${accBadges}</div>` : ''}
+      </td>
       <td><div style="display:flex;flex-wrap:wrap;gap:3px">${catTags || '<span style="color:var(--text-faint);font-size:12px">—</span>'}</div></td>
       <td><div style="display:flex;flex-wrap:wrap;gap:3px">${foodBadges || '<span style="color:var(--text-faint);font-size:12px">—</span>'}</div></td>
       <td>${p.price}</td>
       <td>${hypeSymbol(p)}</td>
-      <td><div style="display:flex;gap:3px;flex-wrap:wrap">${accoladeHTML(p.accolades)}</div></td>
       <td onclick="event.stopPropagation()" title="${p.rating ? p.rating + ' stars' : ''}">${triedBtn}</td>
       <td>${mapLink}</td>
     </tr>`
@@ -889,7 +907,7 @@ function openAdd() {
   const ids = ['f-name','f-neighborhood','f-maps','f-notes']
   ids.forEach(id => document.getElementById(id).value = '')
   document.getElementById('f-price-modal').value = '$$'
-  ;['ac-m1','ac-m2','ac-m3','ac-bib','ac-jb'].forEach(id => document.getElementById(id).checked = false)
+  ;['ac-new','ac-mg','ac-m1','ac-m2','ac-m3','ac-bib','ac-jb'].forEach(id => document.getElementById(id).checked = false)
   renderTagPool(); renderCatPool()
   document.getElementById('place-modal').classList.add('open')
   selectHype(null)
@@ -910,6 +928,8 @@ function openEdit(id) {
   document.getElementById('f-price-modal').value = p.price||'$$'
   const _hypeToSet = p.hype || null
   const ac = p.accolades||{}
+  document.getElementById('ac-new').checked = !!ac.isNew
+  document.getElementById('ac-mg').checked = !!ac.michelinGuide
   ;['m1','m2','m3','bib','jb'].forEach(k => document.getElementById('ac-'+k).checked = !!ac[k === 'm1' ? 'michelin1' : k === 'm2' ? 'michelin2' : k === 'm3' ? 'michelin3' : k])
   renderTagPool(); renderCatPool()
   document.getElementById('place-modal').classList.add('open')
