@@ -1327,7 +1327,7 @@ function showSuggestResult(p) {
   const mapsLink = document.getElementById('suggest-maps-link')
   if (p.maps) { mapsLink.href = p.maps; mapsLink.style.display = 'inline-flex' }
   else mapsLink.style.display = 'none'
-  document.getElementById('suggest-spinner').textContent = '✓ Here's your pick'
+  document.getElementById("suggest-spinner").textContent = "✓ Your pick"
   document.getElementById('suggest-mark-tried').style.display = p.tried ? 'none' : 'inline-flex'
 }
 
