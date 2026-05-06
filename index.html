@@ -299,7 +299,7 @@
       <select id="f-cat" onchange="renderAll()"><option value="">All</option></select>
     </div>
     <div class="filter-group">
-      <label class="filter-label">Food type</label>
+      <label class="filter-label">Types</label>
       <select id="f-food" onchange="renderAll()"><option value="">All</option></select>
     </div>
     <div class="filter-group">
@@ -931,9 +931,8 @@ function renderTable() {
   })
   const arr = c => sortCol===c ? (sortDir===1?' ↑':' ↓') : ''
   const cols = [
-    {k:'name',l:'Name',cls:''},{k:'customCat',l:'Category',cls:''},{k:'foodTags',l:'Food types',cls:''},
-    {k:'price',l:'Price',cls:''},
-    {k:'hype',l:'Hype',cls:''},{k:'rating',l:'Status',cls:''},{k:'_map',l:'',cls:''}
+    {k:'name',l:'Name',cls:''},{k:'customCat',l:'Category',cls:''},{k:'foodTags',l:'Types',cls:''},
+    {k:'rating',l:'Status',cls:''},{k:'_map',l:'',cls:''}
   ]
   document.getElementById('thead-row').innerHTML = cols.map(c =>
     `<th class="${c.cls}" onclick="sortBy('${c.k}')">${c.l}${arr(c.k)}</th>`
@@ -953,16 +952,20 @@ function renderTable() {
       : '—'
     const nameTitle = [p.name, p.neighborhood].filter(Boolean).join(' · ')
     const accBadges = accoladeHTML(p.accolades)
+    const hypeSym = hypeSymbol(p)
+    const priceHype = [p.price, hypeSym].filter(Boolean).join(' ')
     return `<tr onclick="openEdit(${p.id})" style="cursor:pointer">
-      <td style="max-width:140px;min-width:90px" title="${nameTitle}">
+      <td style="max-width:150px;min-width:100px" title="${nameTitle}">
         <div style="font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${p.name}</div>
         ${p.neighborhood ? `<div style="font-size:10px;color:var(--text-faint);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${p.neighborhood}</div>` : ''}
-        ${accBadges ? `<div style="display:flex;flex-wrap:wrap;gap:2px;margin-top:3px">${accBadges}</div>` : ''}
+        <div style="display:flex;align-items:center;gap:5px;margin-top:2px;flex-wrap:wrap">
+          ${p.price ? `<span style="font-size:11px;color:var(--text-muted)">${p.price}</span>` : ''}
+          ${hypeSym}
+          ${accBadges}
+        </div>
       </td>
       <td><div style="display:flex;flex-wrap:wrap;gap:3px">${catTags || '<span style="color:var(--text-faint);font-size:12px">—</span>'}</div></td>
       <td><div style="display:flex;flex-wrap:wrap;gap:3px">${foodBadges || '<span style="color:var(--text-faint);font-size:12px">—</span>'}</div></td>
-      <td>${p.price}</td>
-      <td>${hypeSymbol(p)}</td>
       <td onclick="event.stopPropagation()" title="${p.rating ? p.rating + ' stars' : ''}">${triedBtn}</td>
       <td>${mapLink}</td>
     </tr>`
