@@ -204,6 +204,23 @@
     .review-star.lit { color: var(--gold); }
     .review-avg { font-family: 'DM Serif Display', serif; font-size: 38px; font-weight: 400; color: var(--text); text-align: center; margin: 1rem 0 0.25rem; }
     .review-avg-label { font-size: 12px; color: var(--text-muted); text-align: center; margin-bottom: 1rem; letter-spacing: 0.05em; text-transform: uppercase; }
+
+    /* ── PILL FILTERS ── */
+    .filter-bar { padding: 0 1.5rem 0.75rem; display: flex; flex-direction: column; gap: 6px; }
+    .filter-row { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+    .filter-row-label { font-size: 10px; font-weight: 500; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.06em; white-space: nowrap; min-width: 52px; }
+    .f-pill { font-size: 12px; padding: 4px 10px; border-radius: 99px; border: 1px solid var(--border); background: var(--surface); color: var(--text-muted); cursor: pointer; white-space: nowrap; transition: all 0.1s; user-select: none; }
+    .f-pill:hover { border-color: var(--border-hover); color: var(--text); }
+    .f-pill.active { background: var(--accent-light); color: var(--accent-text); border-color: transparent; font-weight: 500; }
+    .filter-search-row { display: flex; gap: 6px; align-items: center; padding: 0 1.5rem 0.5rem; }
+    .filter-search-row input { flex: 1; font-size: 13px; padding: 7px 10px; border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--surface); color: var(--text); font-family: 'DM Sans', sans-serif; outline: none; }
+    .filter-search-row input:focus { border-color: var(--accent); }
+    @media (max-width: 640px) {
+      .filter-bar { padding: 0 1rem 0.75rem; }
+      .filter-search-row { padding: 0 1rem 0.5rem; }
+      .filter-row-label { min-width: 44px; font-size: 9px; }
+      .f-pill { font-size: 11px; padding: 3px 8px; }
+    }
     /* ── LOADING ── */
     .loading { padding: 3rem; text-align: center; color: var(--text-muted); font-size: 14px; }
 
@@ -284,59 +301,52 @@
     <div class="stat"><div class="stat-label">Accolades</div><div class="stat-val" id="s-acc">—</div></div>
   </div>
 
-  <div class="toolbar">
-    <div class="filter-group">
-      <label class="filter-label">Hype</label>
-      <select id="f-hype" onchange="renderAll()">
-        <option value="">All</option>
-        <option value="3">❗❗❗</option>
-        <option value="2">❗❗</option>
-        <option value="1">❗</option>
-      </select>
+  <div class="filter-bar">
+    <div class="filter-row">
+      <span class="filter-row-label">Hype</span>
+      <span class="f-pill" data-filter="hype" data-val="1" onclick="togglePill(this)">❗</span>
+      <span class="f-pill" data-filter="hype" data-val="2" onclick="togglePill(this)">❗❗</span>
+      <span class="f-pill" data-filter="hype" data-val="3" onclick="togglePill(this)">❗❗❗</span>
     </div>
-    <div class="filter-group">
-      <label class="filter-label">Category</label>
-      <select id="f-cat" onchange="renderAll()"><option value="">All</option></select>
+    <div class="filter-row">
+      <span class="filter-row-label">Category</span>
+      <div id="fp-cat" style="display:flex;flex-wrap:wrap;gap:5px"></div>
     </div>
-    <div class="filter-group">
-      <label class="filter-label">Types</label>
-      <select id="f-food" onchange="renderAll()"><option value="">All</option></select>
+    <div class="filter-row">
+      <span class="filter-row-label">Types</span>
+      <div id="fp-food" style="display:flex;flex-wrap:wrap;gap:5px"></div>
     </div>
-    <div class="filter-group">
-      <label class="filter-label">Price</label>
-      <select id="f-price" onchange="renderAll()">
-        <option value="">All</option>
-        <option value="$">$</option><option value="$$">$$</option><option value="$$$">$$$</option><option value="$$$$">$$$$</option>
-      </select>
+    <div class="filter-row">
+      <span class="filter-row-label">Price</span>
+      <span class="f-pill" data-filter="price" data-val="$" onclick="togglePill(this)">$</span>
+      <span class="f-pill" data-filter="price" data-val="$$" onclick="togglePill(this)">$$</span>
+      <span class="f-pill" data-filter="price" data-val="$$$" onclick="togglePill(this)">$$$</span>
+      <span class="f-pill" data-filter="price" data-val="$$$$" onclick="togglePill(this)">$$$$</span>
     </div>
-    <div class="filter-group">
-      <label class="filter-label">Accolade</label>
-      <select id="f-accolade" onchange="renderAll()">
-        <option value="">All</option>
-        <option value="isNew">New</option>
-        <option value="michelinGuide">📖 Michelin Guide</option>
-        <option value="michelin1">Michelin ★</option>
-        <option value="michelin2">Michelin ★★</option>
-        <option value="michelin3">Michelin ★★★</option>
-        <option value="bib">Bib Gourmand</option>
-        <option value="jb">James Beard</option>
-      </select>
+    <div class="filter-row">
+      <span class="filter-row-label">Accolade</span>
+      <span class="f-pill" data-filter="accolade" data-val="isNew" onclick="togglePill(this)">New</span>
+      <span class="f-pill" data-filter="accolade" data-val="michelinGuide" onclick="togglePill(this)">📖 Guide</span>
+      <span class="f-pill" data-filter="accolade" data-val="michelin1" onclick="togglePill(this)">Michelin ★</span>
+      <span class="f-pill" data-filter="accolade" data-val="michelin2" onclick="togglePill(this)">Michelin ★★</span>
+      <span class="f-pill" data-filter="accolade" data-val="michelin3" onclick="togglePill(this)">Michelin ★★★</span>
+      <span class="f-pill" data-filter="accolade" data-val="bib" onclick="togglePill(this)">Bib Gourmand</span>
+      <span class="f-pill" data-filter="accolade" data-val="jb" onclick="togglePill(this)">James Beard</span>
     </div>
-    <div class="filter-group">
-      <label class="filter-label">Status</label>
-      <select id="f-tried" onchange="renderAll()">
-        <option value="">All</option>
-        <option value="yes">Tried</option>
-        <option value="no">Want to try</option>
-      </select>
+    <div class="filter-row">
+      <span class="filter-row-label">Status</span>
+      <span class="f-pill" data-filter="tried" data-val="no" onclick="togglePill(this)">Want to try</span>
+      <span class="f-pill" data-filter="tried" data-val="yes" onclick="togglePill(this)">Tried</span>
     </div>
-    <div style="position:relative;flex:1;min-width:140px;">
-      <input type="text" id="f-search" placeholder="Search or add a place..." oninput="onSearchInput()" autocomplete="off" style="width:100%;padding-right:80px" />
-      <div id="search-add-btn" style="display:none;position:absolute;right:4px;top:50%;transform:translateY(-50%);">
+  </div>
+  <div class="filter-search-row">
+    <div style="position:relative;flex:1">
+      <input type="text" id="f-search" placeholder="Search or add a place..." oninput="onSearchInput()" autocomplete="off" />
+      <div id="search-add-btn" style="display:none;position:absolute;right:6px;top:50%;transform:translateY(-50%)">
         <button class="btn btn-sm btn-primary" onclick="openAddFromSearch()">+ Add</button>
       </div>
     </div>
-    <button class="btn" onclick="resetFilters()" title="Reset all filters and sorting">↺ Reset</button>
+    <button class="btn btn-sm" onclick="resetFilters()" title="Reset">↺</button>
   </div>
 
   <div id="view-table">
@@ -614,6 +624,7 @@ let editingId = null
 let ratingTargetId = null
 let currentTab = 'table'
 let sortCol = null, sortDir = 1
+const activeFilters = { hype: new Set(), cat: new Set(), food: new Set(), price: new Set(), accolade: new Set(), tried: new Set() }
 let inlineTarget = null
 
 // ── AUTH ──────────────────────────────────────
@@ -793,22 +804,37 @@ async function saveInlineField(id, field, value) {
 }
 
 // ── FILTERS ───────────────────────────────────
+function togglePill(el) {
+  const filter = el.dataset.filter
+  const val = el.dataset.val
+  if (activeFilters[filter].has(val)) {
+    activeFilters[filter].delete(val)
+    el.classList.remove('active')
+  } else {
+    // Status (tried) is single-select: only one at a time
+    if (filter === 'tried') {
+      activeFilters.tried.clear()
+      document.querySelectorAll('.f-pill[data-filter="tried"]').forEach(p => p.classList.remove('active'))
+    }
+    activeFilters[filter].add(val)
+    el.classList.add('active')
+  }
+  renderAll()
+}
+
 function getFiltered() {
-  const fHype = document.getElementById('f-hype').value
-  const fCat = document.getElementById('f-cat').value
-  const fFood = document.getElementById('f-food').value
-  const fPrice = document.getElementById('f-price').value
-  const fAcc = document.getElementById('f-accolade').value
-  const fTried = document.getElementById('f-tried').value
   const fSearch = document.getElementById('f-search').value.toLowerCase()
   return places.filter(p => {
-    if (fHype && String(p.hype||'') !== fHype) return false
-    if (fCat && !(p.customCat||'').split(',').includes(fCat)) return false
-    if (fFood && !(p.foodTags||[]).includes(fFood)) return false
-    if (fPrice && p.price !== fPrice) return false
-    if (fAcc && !p.accolades?.[fAcc]) return false
-    if (fTried === 'yes' && !p.tried) return false
-    if (fTried === 'no' && p.tried) return false
+    if (activeFilters.hype.size && !activeFilters.hype.has(String(p.hype||''))) return false
+    if (activeFilters.cat.size) {
+      const pCats = (p.customCat||'').split(',').filter(Boolean)
+      if (!pCats.some(c => activeFilters.cat.has(c))) return false
+    }
+    if (activeFilters.food.size && !(p.foodTags||[]).some(t => activeFilters.food.has(t))) return false
+    if (activeFilters.price.size && !activeFilters.price.has(p.price||'')) return false
+    if (activeFilters.accolade.size && !([...activeFilters.accolade].some(a => p.accolades?.[a]))) return false
+    if (activeFilters.tried.has('yes') && !p.tried) return false
+    if (activeFilters.tried.has('no') && p.tried) return false
     if (fSearch && ![p.name,p.customCat,p.neighborhood].some(v=>(v||'').toLowerCase().includes(fSearch))) return false
     return true
   })
@@ -837,12 +863,8 @@ function openAddFromSearch() {
   }, 50)
 }
 function resetFilters() {
-  document.getElementById('f-hype').value = ''
-  document.getElementById('f-cat').value = ''
-  document.getElementById('f-food').value = ''
-  document.getElementById('f-price').value = ''
-  document.getElementById('f-accolade').value = ''
-  document.getElementById('f-tried').value = ''
+  Object.keys(activeFilters).forEach(k => activeFilters[k].clear())
+  document.querySelectorAll('.f-pill.active').forEach(p => p.classList.remove('active'))
   document.getElementById('f-search').value = ''
   const btn = document.getElementById('search-add-btn'); if(btn) btn.style.display='none'
   sortCol = null
@@ -857,13 +879,19 @@ function renderAll() {
 }
 
 function updateFilterSelects() {
-  const update = (id, vals, label) => {
-    const sel = document.getElementById(id), cur = sel.value
-    sel.innerHTML = `<option value="">${label}</option>` + [...new Set(vals.filter(Boolean))].sort().map(v => `<option value="${v}"${v===cur?' selected':''}>${v}</option>`).join('')
+  const allCats = [...new Set(places.flatMap(p=>(p.customCat||'').split(',').filter(Boolean)))].sort()
+  const catEl = document.getElementById('fp-cat')
+  const foodEl = document.getElementById('fp-food')
+  if (catEl) {
+    catEl.innerHTML = allCats.map(c =>
+      `<span class="f-pill${activeFilters.cat.has(c)?' active':''}" data-filter="cat" data-val="${c}" onclick="togglePill(this)">${c}</span>`
+    ).join('')
   }
-  const allCats = [...new Set(places.flatMap(p=>(p.customCat||'').split(',').filter(Boolean)))]
-  update('f-cat', allCats, 'All categories')
-  update('f-food', allFoodTags, 'All food types')
+  if (foodEl) {
+    foodEl.innerHTML = [...allFoodTags].sort().map(t =>
+      `<span class="f-pill${activeFilters.food.has(t)?' active':''}" data-filter="food" data-val="${t}" onclick="togglePill(this)">${t}</span>`
+    ).join('')
+  }
 }
 
 function renderStats() {
