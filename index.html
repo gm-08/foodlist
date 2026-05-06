@@ -197,16 +197,6 @@
     .places-suggestion .ps-sub { font-size: 12px; color: var(--text-muted); margin-top: 1px; }
     .places-autofilled { font-size: 11px; color: var(--accent); margin-top: 5px; display: none; }
 
-
-    /* ── REVIEW MODAL ── */
-    .review-cat { display: flex; align-items: center; justify-content: space-between; padding: 10px 0; border-bottom: 0.5px solid var(--border); }
-    .review-cat:last-of-type { border-bottom: none; }
-    .review-cat-label { font-size: 14px; color: var(--text); font-weight: 500; }
-    .review-cat-stars { display: flex; gap: 3px; }
-    .review-star { font-size: 22px; background: none; border: none; cursor: pointer; color: #ddd; transition: color 0.1s; line-height: 1; padding: 0; }
-    .review-star.lit { color: var(--gold); }
-    .review-avg { font-family: 'DM Serif Display', serif; font-size: 38px; font-weight: 400; color: var(--text); text-align: center; margin: 1rem 0 0.25rem; }
-    .review-avg-label { font-size: 12px; color: var(--text-muted); text-align: center; margin-bottom: 1rem; letter-spacing: 0.05em; text-transform: uppercase; }
     /* ── LOADING ── */
     .loading { padding: 3rem; text-align: center; color: var(--text-muted); font-size: 14px; }
 
@@ -274,7 +264,6 @@
       <div style="display:flex;gap:6px;">
         <button class="btn btn-sm" id="tab-table" onclick="switchTab('table')">Table</button>
         <button class="btn btn-sm" id="tab-map" onclick="switchTab('map')">Map</button>
-        <button class="btn btn-sm" id="tab-suggest" onclick="switchTab('suggest')">🎰 Suggest</button>
       </div>
       <button class="signout-btn" onclick="doSignOut()">Sign out</button>
     </div>
@@ -351,69 +340,6 @@
     </div></div>
   </div>
 
-  <div id="view-suggest" style="display:none">
-    <div style="max-width:520px;margin:0 auto;padding:1.5rem">
-      <h2 style="font-family:'DM Serif Display',serif;font-size:24px;font-weight:400;margin-bottom:6px">Where should I eat?</h2>
-      <p style="font-size:14px;color:var(--text-muted);margin-bottom:1.5rem">Set your filters and spin to get a suggestion.</p>
-
-      <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:1.25rem;margin-bottom:1rem">
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px">
-          <div class="filter-group" style="grid-column:1/-1">
-            <label class="filter-label">Status</label>
-            <select id="sg-tried">
-              <option value="">Any</option>
-              <option value="no" selected>Haven't tried yet</option>
-              <option value="yes">Already tried</option>
-            </select>
-          </div>
-          <div class="filter-group">
-            <label class="filter-label">Category</label>
-            <select id="sg-cat"><option value="">Any</option></select>
-          </div>
-          <div class="filter-group">
-            <label class="filter-label">Food type</label>
-            <select id="sg-food"><option value="">Any</option></select>
-          </div>
-          <div class="filter-group">
-            <label class="filter-label">Price</label>
-            <select id="sg-price">
-              <option value="">Any</option>
-              <option value="$">$</option>
-              <option value="$$">$$</option>
-              <option value="$$$">$$$</option>
-              <option value="$$$$">$$$$</option>
-            </select>
-          </div>
-          <div class="filter-group">
-            <label class="filter-label">Hype (min)</label>
-            <select id="sg-hype">
-              <option value="">Any</option>
-              <option value="1">❗ or above</option>
-              <option value="2">❗❗ or above</option>
-              <option value="3">❗❗❗ only</option>
-            </select>
-          </div>
-        </div>
-        <button class="btn btn-primary" style="width:100%;font-size:16px;padding:12px" onclick="spinSuggest()">🎰 Spin</button>
-      </div>
-
-      <!-- Slot machine result -->
-      <div id="suggest-result" style="display:none;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:1.5rem;text-align:center">
-        <div id="suggest-spinner" style="font-size:13px;color:var(--text-muted);margin-bottom:1rem;min-height:20px"></div>
-        <div id="suggest-name" style="font-family:'DM Serif Display',serif;font-size:28px;font-weight:400;color:var(--text);margin-bottom:6px"></div>
-        <div id="suggest-meta" style="font-size:13px;color:var(--text-muted);margin-bottom:1rem"></div>
-        <div id="suggest-badges" style="display:flex;justify-content:center;flex-wrap:wrap;gap:4px;margin-bottom:1.25rem"></div>
-        <div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap">
-          <button class="btn" onclick="spinSuggest()">🔄 Try another</button>
-          <a id="suggest-maps-link" href="#" target="_blank" class="btn" style="text-decoration:none;display:none">📍 Open in Maps</a>
-          <button class="btn btn-primary" id="suggest-mark-tried" onclick="openRatingFromSuggest()">✓ Mark tried</button>
-        </div>
-      </div>
-      <div id="suggest-empty" style="display:none;text-align:center;padding:2rem;color:var(--text-muted);font-size:14px">
-        No places match your filters. Try loosening the criteria.
-      </div>
-    </div>
-  </div>
   <div id="view-map" style="display:none">
     <div class="map-section">
       <div id="map-leaflet"></div>
@@ -514,76 +440,19 @@
 
 <!-- ══ RATING MODAL ══ -->
 <div class="rating-overlay" id="rating-modal" onclick="if(event.target===this)closeModal('rating-modal')">
-  <div class="rating-modal" onclick="event.stopPropagation()" style="max-width:460px;text-align:left">
-    <h3 id="rating-name" style="margin-bottom:4px"></h3>
-    <p style="margin-bottom:1.25rem">Rate your experience</p>
-    <div id="review-categories">
-      <div class="review-cat" data-cat="food">
-        <span class="review-cat-label">🍽 Food</span>
-        <div class="review-cat-stars">
-          <button class="review-star" onclick="setReviewStar('food',1)">★</button>
-          <button class="review-star" onclick="setReviewStar('food',2)">★</button>
-          <button class="review-star" onclick="setReviewStar('food',3)">★</button>
-          <button class="review-star" onclick="setReviewStar('food',4)">★</button>
-          <button class="review-star" onclick="setReviewStar('food',5)">★</button>
-        </div>
-      </div>
-      <div class="review-cat" data-cat="vibe">
-        <span class="review-cat-label">✨ Vibe</span>
-        <div class="review-cat-stars">
-          <button class="review-star" onclick="setReviewStar('vibe',1)">★</button>
-          <button class="review-star" onclick="setReviewStar('vibe',2)">★</button>
-          <button class="review-star" onclick="setReviewStar('vibe',3)">★</button>
-          <button class="review-star" onclick="setReviewStar('vibe',4)">★</button>
-          <button class="review-star" onclick="setReviewStar('vibe',5)">★</button>
-        </div>
-      </div>
-      <div class="review-cat" data-cat="service">
-        <span class="review-cat-label">🤝 Service</span>
-        <div class="review-cat-stars">
-          <button class="review-star" onclick="setReviewStar('service',1)">★</button>
-          <button class="review-star" onclick="setReviewStar('service',2)">★</button>
-          <button class="review-star" onclick="setReviewStar('service',3)">★</button>
-          <button class="review-star" onclick="setReviewStar('service',4)">★</button>
-          <button class="review-star" onclick="setReviewStar('service',5)">★</button>
-        </div>
-      </div>
-      <div class="review-cat" data-cat="bathroom">
-        <span class="review-cat-label">🚻 Bathroom</span>
-        <div class="review-cat-stars">
-          <button class="review-star" onclick="setReviewStar('bathroom',1)">★</button>
-          <button class="review-star" onclick="setReviewStar('bathroom',2)">★</button>
-          <button class="review-star" onclick="setReviewStar('bathroom',3)">★</button>
-          <button class="review-star" onclick="setReviewStar('bathroom',4)">★</button>
-          <button class="review-star" onclick="setReviewStar('bathroom',5)">★</button>
-        </div>
-      </div>
-      <div class="review-cat" data-cat="value">
-        <span class="review-cat-label">💰 Value</span>
-        <div class="review-cat-stars">
-          <button class="review-star" onclick="setReviewStar('value',1)">★</button>
-          <button class="review-star" onclick="setReviewStar('value',2)">★</button>
-          <button class="review-star" onclick="setReviewStar('value',3)">★</button>
-          <button class="review-star" onclick="setReviewStar('value',4)">★</button>
-          <button class="review-star" onclick="setReviewStar('value',5)">★</button>
-        </div>
-      </div>
-      <div class="review-cat" data-cat="wow">
-        <span class="review-cat-label">🤩 Wow Factor</span>
-        <div class="review-cat-stars">
-          <button class="review-star" onclick="setReviewStar('wow',1)">★</button>
-          <button class="review-star" onclick="setReviewStar('wow',2)">★</button>
-          <button class="review-star" onclick="setReviewStar('wow',3)">★</button>
-          <button class="review-star" onclick="setReviewStar('wow',4)">★</button>
-          <button class="review-star" onclick="setReviewStar('wow',5)">★</button>
-        </div>
-      </div>
+  <div class="rating-modal" onclick="event.stopPropagation()">
+    <h3 id="rating-name"></h3>
+    <p>How was it?</p>
+    <div class="star-row">
+      <button class="star-btn" onclick="setStars(1)">★</button>
+      <button class="star-btn" onclick="setStars(2)">★</button>
+      <button class="star-btn" onclick="setStars(3)">★</button>
+      <button class="star-btn" onclick="setStars(4)">★</button>
+      <button class="star-btn" onclick="setStars(5)">★</button>
     </div>
-    <div class="review-avg" id="review-avg-score">—</div>
-    <div class="review-avg-label">Overall score</div>
-    <div style="margin-bottom:1rem">
-      <label style="display:block;font-size:11px;font-weight:500;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:5px">Notes</label>
-      <textarea id="rating-notes" placeholder="What did you think? Best dish, would you return..." style="width:100%;padding:9px 11px;border:1px solid var(--border);border-radius:var(--radius-sm);font-size:14px;font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);resize:vertical;min-height:64px;line-height:1.5;outline:none"></textarea>
+    <div style="margin-bottom:1rem;text-align:left">
+      <label style="display:block;font-size:11px;font-weight:500;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:5px">Notes (optional)</label>
+      <textarea id="rating-notes" placeholder="What did you think? Best dish, would you return..." style="width:100%;padding:9px 11px;border:1px solid var(--border);border-radius:var(--radius-sm);font-size:14px;font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);resize:vertical;min-height:72px;line-height:1.5;outline:none"></textarea>
     </div>
     <div class="rating-actions">
       <button class="btn" onclick="closeModal('rating-modal')">Cancel</button>
@@ -615,6 +484,7 @@ let selectedTags = []
 let selectedCats = []
 let editingId = null
 let ratingTargetId = null
+let pendingStars = 0
 let currentTab = 'table'
 let sortCol = null, sortDir = 1
 let inlineTarget = null
@@ -747,35 +617,13 @@ async function confirmDelete() {
   renderAll()
 }
 
-const REVIEW_CATS = ['food','vibe','service','bathroom','value','wow']
-let reviewScores = {}
-
-function setReviewStar(cat, n) {
-  reviewScores[cat] = n
-  // Update stars UI for this category
-  const row = document.querySelector(`.review-cat[data-cat="${cat}"]`)
-  if (row) row.querySelectorAll('.review-star').forEach((s,i) => s.classList.toggle('lit', i < n))
-  // Recalculate avg
-  const filled = REVIEW_CATS.filter(c => reviewScores[c])
-  const avg = filled.length ? (filled.reduce((a,c) => a + reviewScores[c], 0) / filled.length) : null
-  const el = document.getElementById('review-avg-score')
-  if (el) el.textContent = avg ? avg.toFixed(1) + ' ★' : '—'
-}
-
 async function saveRating() {
   if (!ratingTargetId) return
   const notes = document.getElementById('rating-notes').value.trim()
-  const filled = REVIEW_CATS.filter(c => reviewScores[c])
-  const avg = filled.length ? parseFloat((filled.reduce((a,c) => a + reviewScores[c], 0) / filled.length).toFixed(2)) : null
-  const update = {
-    tried: true,
-    rating: avg,
-    notes: notes || null,
-    accolades: { ...(places.find(x=>x.id===ratingTargetId)?.accolades||{}), reviewScores: {...reviewScores} }
-  }
+  const update = { tried: true, rating: pendingStars || null, notes: notes || null }
   await sb.from('places').update(update).eq('id', ratingTargetId)
   const p = places.find(x => x.id === ratingTargetId)
-  if (p) { p.tried = true; p.rating = avg; p.notes = notes; if (!p.accolades) p.accolades = {}; p.accolades.reviewScores = {...reviewScores} }
+  if (p) { p.tried = true; p.rating = pendingStars || null; p.notes = notes }
   closeModal('rating-modal')
   renderAll()
 }
@@ -1045,13 +893,9 @@ function switchTab(tab) {
   currentTab = tab
   document.getElementById('view-table').style.display = tab === 'table' ? 'block' : 'none'
   document.getElementById('view-map').style.display = tab === 'map' ? 'block' : 'none'
-  document.getElementById('view-suggest').style.display = tab === 'suggest' ? 'block' : 'none'
-  ;['table','map','suggest'].forEach(t => {
-    const el = document.getElementById('tab-' + t)
-    if (el) el.style.fontWeight = t === tab ? '500' : '400'
-  })
+  document.getElementById('tab-table').style.fontWeight = tab === 'table' ? '500' : '400'
+  document.getElementById('tab-map').style.fontWeight = tab === 'map' ? '500' : '400'
   if (tab === 'map') setTimeout(() => renderMap(), 50)
-  else if (tab === 'suggest') populateSuggestFilters()
   else renderAll()
 }
 
@@ -1186,20 +1030,15 @@ async function addNewCat() {
 
 // ── RATING ────────────────────────────────────
 function openRating(id) {
-  ratingTargetId = id
+  ratingTargetId = id; pendingStars = 0
   const p = places.find(x => x.id === id)
   document.getElementById('rating-name').textContent = p?.name || ''
   document.getElementById('rating-notes').value = p?.notes || ''
-  // Load existing review scores
-  reviewScores = p?.accolades?.reviewScores ? {...p.accolades.reviewScores} : {}
-  REVIEW_CATS.forEach(cat => {
-    const n = reviewScores[cat] || 0
-    const row = document.querySelector(`.review-cat[data-cat="${cat}"]`)
-    if (row) row.querySelectorAll('.review-star').forEach((s,i) => s.classList.toggle('lit', i < n))
-  })
-  const filled = REVIEW_CATS.filter(c => reviewScores[c])
-  const avg = filled.length ? (filled.reduce((a,c) => a + reviewScores[c], 0) / filled.length) : null
-  document.getElementById('review-avg-score').textContent = avg ? avg.toFixed(1) + ' ★' : '—'
+  document.querySelectorAll('.star-btn').forEach(b => b.classList.remove('lit'))
+  if (p?.rating) {
+    pendingStars = p.rating
+    document.querySelectorAll('.star-btn').forEach((b,i) => b.classList.toggle('lit', i < p.rating))
+  }
   document.getElementById('rating-modal').classList.add('open')
 }
 
@@ -1258,88 +1097,6 @@ function closeDDOutside(e) {
 closeDDOutside._skip = false
 document.addEventListener('click', closeDDOutside)
 
-
-// ── SUGGEST TAB ───────────────────────────────
-let suggestCurrentId = null
-
-function populateSuggestFilters() {
-  const cats = [...new Set(places.flatMap(p=>(p.customCat||'').split(',').filter(Boolean)))].sort()
-  const foods = [...new Set(allFoodTags)].sort()
-  const sgCat = document.getElementById('sg-cat')
-  const sgFood = document.getElementById('sg-food')
-  if (!sgCat || !sgFood) return
-  const curCat = sgCat.value, curFood = sgFood.value
-  sgCat.innerHTML = '<option value="">Any</option>' + cats.map(c=>`<option value="${c}"${c===curCat?' selected':''}>${c}</option>`).join('')
-  sgFood.innerHTML = '<option value="">Any</option>' + foods.map(f=>`<option value="${f}"${f===curFood?' selected':''}>${f}</option>`).join('')
-}
-
-function getSuggestPool() {
-  const tried = document.getElementById('sg-tried').value
-  const cat = document.getElementById('sg-cat').value
-  const food = document.getElementById('sg-food').value
-  const price = document.getElementById('sg-price').value
-  const minHype = document.getElementById('sg-hype').value
-  return places.filter(p => {
-    if (tried === 'yes' && !p.tried) return false
-    if (tried === 'no' && p.tried) return false
-    if (cat && !(p.customCat||'').split(',').includes(cat)) return false
-    if (food && !(p.foodTags||[]).includes(food)) return false
-    if (price && p.price !== price) return false
-    if (minHype && (parseInt(p.hype||0) < parseInt(minHype))) return false
-    return true
-  })
-}
-
-function spinSuggest() {
-  const pool = getSuggestPool()
-  document.getElementById('suggest-result').style.display = 'none'
-  document.getElementById('suggest-empty').style.display = 'none'
-  if (!pool.length) { document.getElementById('suggest-empty').style.display = 'block'; return }
-
-  // Slot machine animation
-  const spinner = document.getElementById('suggest-spinner')
-  document.getElementById('suggest-result').style.display = 'block'
-  document.getElementById('suggest-name').textContent = '...'
-  spinner.textContent = ''
-
-  let ticks = 0
-  const maxTicks = 18
-  const interval = setInterval(() => {
-    const r = pool[Math.floor(Math.random() * pool.length)]
-    document.getElementById('suggest-name').textContent = r.name
-    ticks++
-    if (ticks >= maxTicks) {
-      clearInterval(interval)
-      // Final pick — exclude current if pool > 1
-      let final = pool[Math.floor(Math.random() * pool.length)]
-      if (pool.length > 1 && final.id === suggestCurrentId) {
-        final = pool.filter(p => p.id !== suggestCurrentId)[Math.floor(Math.random() * (pool.length - 1))]
-      }
-      suggestCurrentId = final.id
-      showSuggestResult(final)
-    }
-  }, 80)
-}
-
-function showSuggestResult(p) {
-  document.getElementById('suggest-name').textContent = p.name
-  const hype = p.hype === '3' ? '❗❗❗' : p.hype === '2' ? '❗❗' : p.hype === '1' ? '❗' : ''
-  const meta = [p.neighborhood, p.price, hype].filter(Boolean).join(' · ')
-  document.getElementById('suggest-meta').textContent = meta
-  const badges = document.getElementById('suggest-badges')
-  const cats = (p.customCat||'').split(',').filter(Boolean).map(c=>`<span class="badge badge-cat">${c}</span>`).join('')
-  const accs = accoladeHTML(p.accolades)
-  badges.innerHTML = cats + (accs ? ' ' + accs : '')
-  const mapsLink = document.getElementById('suggest-maps-link')
-  if (p.maps) { mapsLink.href = p.maps; mapsLink.style.display = 'inline-flex' }
-  else mapsLink.style.display = 'none'
-  document.getElementById('suggest-spinner').textContent = '✓ Here's your pick'
-  document.getElementById('suggest-mark-tried').style.display = p.tried ? 'none' : 'inline-flex'
-}
-
-function openRatingFromSuggest() {
-  if (suggestCurrentId) openRating(suggestCurrentId)
-}
 // ── BOOT ──────────────────────────────────────
 init()
 </script>
