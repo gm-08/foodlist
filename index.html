@@ -790,7 +790,7 @@ async function saveRating() {
   if (!ratingTargetId) return
   const notes = document.getElementById('rating-notes').value.trim()
   const filled = REVIEW_CATS.filter(c => reviewScores[c])
-  const avg = filled.length ? parseFloat((filled.reduce((a,c) => a + reviewScores[c], 0) / filled.length).toFixed(2)) : null
+  const avg = filled.length ? parseFloat((filled.reduce((a,c) => a + reviewScores[c], 0) / filled.length).toFixed(1)) : null
   const p = places.find(x => x.id === ratingTargetId)
   const mergedAccolades = { ...(p?.accolades || {}), reviewScores: {...reviewScores} }
   // Explicit column names so nothing gets silently dropped
@@ -1008,11 +1008,11 @@ function renderTable() {
     const catTags = (p.customCat||'').split(',').filter(Boolean).map(c=>`<span class="badge badge-cat">${c}</span>`).join(' ')
     const foodBadges = (p.foodTags||[]).map(t=>`<span class="badge badge-food">${t}</span>`).join(' ')
     const triedBtn = p.tried
-      ? `<div style="display:flex;gap:4px;align-items:center">
-           <button class="btn-tried is-tried" onclick="event.stopPropagation();openRating(${p.id})">${p.rating ? '★'.repeat(p.rating) : 'Tried ✓'}</button>
-           <button class="btn-tried" style="padding:4px 6px;font-size:11px;" onclick="event.stopPropagation();untryPlace(${p.id})" title="Remove tried">✕</button>
+      ? `<div style="display:flex;gap:3px;align-items:center">
+           <button class="btn-tried is-tried" onclick="event.stopPropagation();openRating(${p.id})">${p.rating ? p.rating.toFixed(1) + '★' : '✓'}</button>
+           <button class="btn-tried" style="padding:3px 5px;font-size:10px;" onclick="event.stopPropagation();untryPlace(${p.id})" title="Remove tried">✕</button>
          </div>`
-      : `<button class="btn-tried" onclick="event.stopPropagation();openRating(${p.id})">Mark tried</button>`
+      : `<button class="btn-tried" onclick="event.stopPropagation();openRating(${p.id})">Tried?</button>`
     const mapLink = p.maps ? `<a href="${p.maps}" target="_blank" style="font-size:12px;color:var(--blue);text-decoration:none;" onclick="event.stopPropagation()">Maps ↗</a>` : ''
     const ratingCell = p.tried
       ? (p.rating ? `<span class="stars-gold">${'★'.repeat(p.rating)}${'☆'.repeat(5-p.rating)}</span>` : '<span style="color:var(--text-faint);font-size:12px;">not rated</span>')
@@ -1022,19 +1022,19 @@ function renderTable() {
     const hypeSym = hypeSymbol(p)
     const priceHype = [p.price, hypeSym].filter(Boolean).join(' ')
     return `<tr onclick="openEdit(${p.id})" style="cursor:pointer">
-      <td style="max-width:150px;min-width:100px" title="${nameTitle}">
+      <td style="max-width:110px;min-width:70px" title="${nameTitle}">
         <div style="font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${p.name}</div>
-        ${p.neighborhood ? `<div style="font-size:10px;color:var(--text-faint);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${p.neighborhood}</div>` : ''}
-        <div style="display:flex;align-items:center;gap:5px;margin-top:2px;flex-wrap:wrap">
-          ${p.price ? `<span style="font-size:11px;color:var(--text-muted)">${p.price}</span>` : ''}
+        ${p.neighborhood ? `<div style="font-size:9px;color:var(--text-faint);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${p.neighborhood}</div>` : ''}
+        <div style="display:flex;align-items:center;gap:4px;margin-top:2px;flex-wrap:wrap">
+          ${p.price ? `<span style="font-size:10px;color:var(--text-muted)">${p.price}</span>` : ''}
           ${hypeSym}
           ${accBadges}
         </div>
       </td>
-      <td><div style="display:flex;flex-wrap:wrap;gap:3px">${catTags || '<span style="color:var(--text-faint);font-size:12px">—</span>'}</div></td>
-      <td><div style="display:flex;flex-wrap:wrap;gap:3px">${foodBadges || '<span style="color:var(--text-faint);font-size:12px">—</span>'}</div></td>
-      <td onclick="event.stopPropagation()" title="${p.rating ? p.rating + ' stars' : ''}">${triedBtn}</td>
-      <td>${mapLink}</td>
+      <td><div style="display:flex;flex-wrap:wrap;gap:3px">${catTags || '<span style="color:var(--text-faint);font-size:11px">—</span>'}</div></td>
+      <td><div style="display:flex;flex-wrap:wrap;gap:3px">${foodBadges || '<span style="color:var(--text-faint);font-size:11px">—</span>'}</div></td>
+      <td style="white-space:nowrap;width:1px" onclick="event.stopPropagation()" title="${p.rating ? p.rating + ' stars' : ''}">${triedBtn}</td>
+      <td style="white-space:nowrap;width:1px">${mapLink}</td>
     </tr>`
   }).join('')
 }
@@ -1092,11 +1092,23 @@ async function renderMap() {
     if (!lat) continue
 
     bounds.push([lat, lng])
-    const hypeLabel = p.hype === '2' ? '❗❗' : p.hype === '1' ? '❗' : '📋'
-    const triedLine = p.tried ? (p.rating ? '<br>' + '★'.repeat(p.rating) + '☆'.repeat(5 - p.rating) : '<br>Tried') : ''
+    const catLabel = (p.customCat||'').split(',').filter(Boolean)[0] || '•'
+    const triedLine = p.tried ? (p.rating ? '<br>' + '★'.repeat(Math.round(p.rating)) + '☆'.repeat(5 - Math.round(p.rating)) : '<br>Tried') : ''
     const mapsLink = p.maps ? `<br><a href="${p.maps}" target="_blank" style="color:#1a4a7a;font-size:12px;">Open in Maps ↗</a>` : ''
-    const popup = `<strong>${p.name}</strong>${p.neighborhood ? '<br><span style="color:#888">' + p.neighborhood + '</span>' : ''}<br>${hypeLabel} &nbsp;${p.price}${triedLine}${mapsLink}`
-    const marker = L.marker([lat, lng]).addTo(_map).bindPopup(popup)
+    const hypeLabel = p.hype === '3' ? '❗❗❗' : p.hype === '2' ? '❗❗' : p.hype === '1' ? '❗' : ''
+    const popup = `<strong>${p.name}</strong>${p.neighborhood ? '<br><span style="color:#888">' + p.neighborhood + '</span>' : ''}<br>${[p.price, hypeLabel].filter(Boolean).join(' ')}${triedLine}${mapsLink}`
+    const icon = L.divIcon({
+      className: '',
+      html: `<div style="
+        background:#2a5c45;color:#fff;font-family:'DM Sans',sans-serif;
+        font-size:10px;font-weight:500;padding:3px 6px;border-radius:99px;
+        white-space:nowrap;box-shadow:0 1px 4px rgba(0,0,0,0.25);
+        border:1.5px solid rgba(255,255,255,0.5);
+        ${p.tried ? 'background:#1a4a7a;' : ''}
+      ">${catLabel}</div>`,
+      iconAnchor: [0, 0]
+    })
+    const marker = L.marker([lat, lng], { icon }).addTo(_map).bindPopup(popup)
     _markers.push(marker)
   }
 
