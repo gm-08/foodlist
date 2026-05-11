@@ -304,11 +304,9 @@
     </div>
   </div>
 
-  <div class="stats-bar">
+  <div class="stats-bar" style="grid-template-columns:repeat(2,1fr)">
     <div class="stat"><div class="stat-label">On the list</div><div class="stat-val" id="s-total">—</div></div>
     <div class="stat"><div class="stat-label">Tried</div><div class="stat-val" id="s-tried">—</div></div>
-    <div class="stat"><div class="stat-label">Avg rating</div><div class="stat-val" id="s-avg">—</div></div>
-    <div class="stat"><div class="stat-label">Accolades</div><div class="stat-val" id="s-acc">—</div></div>
   </div>
 
   <div class="filter-toggle-row">
@@ -695,7 +693,7 @@ function fromDB(p) {
     neighborhood: p.neighborhood || '',
     maps: p.maps_url || '',
     hype: p.hype_manual != null ? String(p.hype_manual) : null,
-    rating: p.rating || null,
+    rating: p.rating != null ? parseFloat(parseFloat(p.rating).toFixed(1)) : null,
     tried: p.tried || false,
     notes: p.notes || '',
     accolades: p.accolades || {},
@@ -714,7 +712,7 @@ function toDB(d) {
     notes: d.notes,
     accolades: d.accolades,
     tried: d.tried || false,
-    rating: d.rating || null,
+    rating: d.rating != null ? parseFloat(parseFloat(d.rating).toFixed(1)) : null,
   }
 }
 
@@ -793,10 +791,9 @@ async function saveRating() {
   const avg = filled.length ? parseFloat((filled.reduce((a,c) => a + reviewScores[c], 0) / filled.length).toFixed(1)) : null
   const p = places.find(x => x.id === ratingTargetId)
   const mergedAccolades = { ...(p?.accolades || {}), reviewScores: {...reviewScores} }
-  // Explicit column names so nothing gets silently dropped
   const { error } = await sb.from('places').update({
     tried: true,
-    rating: avg,
+    rating: avg,   // numeric(3,1) or float column — always 1dp float
     notes: notes || null,
     accolades: mergedAccolades
   }).eq('id', ratingTargetId)
@@ -936,9 +933,6 @@ function updateFilterSelects() {
 function renderStats() {
   document.getElementById('s-total').textContent = places.length
   document.getElementById('s-tried').textContent = places.filter(p=>p.tried).length
-  const rated = places.filter(p=>p.rating)
-  document.getElementById('s-avg').textContent = rated.length ? (rated.reduce((a,p)=>a+p.rating,0)/rated.length).toFixed(1)+'★' : '—'
-  document.getElementById('s-acc').textContent = places.filter(p=>p.accolades&&Object.values(p.accolades).some(v=>v===true)).length
 }
 
 function hypeSymbol(p) {
@@ -1009,7 +1003,7 @@ function renderTable() {
     const foodBadges = (p.foodTags||[]).map(t=>`<span class="badge badge-food">${t}</span>`).join(' ')
     const triedBtn = p.tried
       ? `<div style="display:flex;gap:3px;align-items:center">
-           <button class="btn-tried is-tried" onclick="event.stopPropagation();openRating(${p.id})">${p.rating ? p.rating.toFixed(1) + '★' : '✓'}</button>
+           <button class="btn-tried is-tried" onclick="event.stopPropagation();openRating(${p.id})">${p.rating != null ? p.rating.toFixed(1) + '★' : '✓'}</button>
            <button class="btn-tried" style="padding:3px 5px;font-size:10px;" onclick="event.stopPropagation();untryPlace(${p.id})" title="Remove tried">✕</button>
          </div>`
       : `<button class="btn-tried" onclick="event.stopPropagation();openRating(${p.id})">Tried?</button>`
@@ -1093,7 +1087,7 @@ async function renderMap() {
 
     bounds.push([lat, lng])
     const catLabel = (p.customCat||'').split(',').filter(Boolean)[0] || '•'
-    const triedLine = p.tried ? (p.rating ? '<br>' + '★'.repeat(Math.round(p.rating)) + '☆'.repeat(5 - Math.round(p.rating)) : '<br>Tried') : ''
+    const triedLine = p.tried ? (p.rating != null ? '<br>' + p.rating.toFixed(1) + '★' : '<br>Tried') : ''
     const mapsLink = p.maps ? `<br><a href="${p.maps}" target="_blank" style="color:#1a4a7a;font-size:12px;">Open in Maps ↗</a>` : ''
     const hypeLabel = p.hype === '3' ? '❗❗❗' : p.hype === '2' ? '❗❗' : p.hype === '1' ? '❗' : ''
     const popup = `<strong>${p.name}</strong>${p.neighborhood ? '<br><span style="color:#888">' + p.neighborhood + '</span>' : ''}<br>${[p.price, hypeLabel].filter(Boolean).join(' ')}${triedLine}${mapsLink}`
