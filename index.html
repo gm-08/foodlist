@@ -34,7 +34,7 @@
       --shadow-lg: 0 8px 32px rgba(0,0,0,0.12);
     }
     * { box-sizing: border-box; margin: 0; padding: 0; }
-    body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--text); font-size: 14px; line-height: 1.5; min-height: 100vh; }
+    body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--text); font-size: 12px; line-height: 1.5; min-height: 100vh; }
 
     /* ── LOGIN ── */
     #login-screen { display: flex; align-items: center; justify-content: center; min-height: 100vh; padding: 2rem; }
@@ -60,10 +60,10 @@
     .signout-btn:hover { color: var(--text); border-color: var(--border-hover); }
 
     /* ── STATS ── */
-    .stats-bar { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; padding: 1.25rem 1.5rem; }
-    .stat { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px 16px; }
-    .stat-label { font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 5px; }
-    .stat-val { font-size: 26px; font-weight: 300; color: var(--text); line-height: 1; }
+    .stats-bar { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; padding: 0.75rem 1.5rem; }
+    .stat { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 10px 12px; }
+    .stat-label { font-size: 10px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 3px; }
+    .stat-val { font-size: 20px; font-weight: 300; color: var(--text); line-height: 1; }
 
     /* ── TOOLBAR ── */
     .toolbar { padding: 0 1.5rem 1rem; display: flex; gap: 10px; flex-wrap: wrap; align-items: flex-end; }
@@ -88,9 +88,9 @@
     td:first-child::after, th:first-child::after { content: ""; position: absolute; right: -4px; top: 0; bottom: 0; width: 4px; background: linear-gradient(to right, rgba(0,0,0,0.06), transparent); pointer-events: none; }
     th:first-child, td:first-child { position: sticky; left: 0; }
     thead { background: var(--bg); }
-    th { text-align: left; padding: 10px 12px; font-size: 11px; font-weight: 500; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.06em; border-bottom: 1px solid var(--border); cursor: pointer; white-space: nowrap; user-select: none; }
+    th { text-align: left; padding: 7px 8px; font-size: 10px; font-weight: 500; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.06em; border-bottom: 1px solid var(--border); cursor: pointer; white-space: nowrap; user-select: none; }
     th:hover { color: var(--text); }
-    td { padding: 10px 12px; border-bottom: 1px solid var(--border); vertical-align: middle; }
+    td { padding: 7px 8px; border-bottom: 1px solid var(--border); vertical-align: middle; }
     tr:last-child td { border-bottom: none; }
     tbody tr:hover td { background: var(--bg); }
     .add-row { padding: 10px 12px; font-size: 13px; color: var(--text-muted); cursor: pointer; display: flex; align-items: center; gap: 6px; transition: color 0.12s; border-top: 1px solid var(--border); }
@@ -205,55 +205,65 @@
     .review-avg { font-family: 'DM Serif Display', serif; font-size: 38px; font-weight: 400; color: var(--text); text-align: center; margin: 1rem 0 0.25rem; }
     .review-avg-label { font-size: 12px; color: var(--text-muted); text-align: center; margin-bottom: 1rem; letter-spacing: 0.05em; text-transform: uppercase; }
 
-    /* ── PILL FILTERS ── */
+    /* ── PILL FILTERS (now inside dropdown) ── */
     .filter-bar { padding: 0 1.5rem 0.75rem; display: flex; flex-direction: column; gap: 6px; }
     .filter-row { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
     .filter-row-label { font-size: 10px; font-weight: 500; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.06em; white-space: nowrap; min-width: 52px; }
-    .f-pill { font-size: 12px; padding: 4px 10px; border-radius: 99px; border: 1px solid var(--border); background: var(--surface); color: var(--text-muted); cursor: pointer; white-space: nowrap; transition: all 0.1s; user-select: none; }
+    .f-pill { font-size: 11px; padding: 3px 8px; border-radius: 99px; border: 1px solid var(--border); background: var(--surface); color: var(--text-muted); cursor: pointer; white-space: nowrap; transition: all 0.1s; user-select: none; }
     .f-pill:hover { border-color: var(--border-hover); color: var(--text); }
     .f-pill.active { background: var(--accent-light); color: var(--accent-text); border-color: transparent; font-weight: 500; }
+
+    /* ── FILTER DROPDOWN PANEL ── */
+    .filter-toggle-row { display: flex; gap: 6px; align-items: center; padding: 0 1.5rem 0.5rem; }
+    .filter-toggle-row input { flex: 1; font-size: 12px; padding: 6px 9px; border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--surface); color: var(--text); font-family: 'DM Sans', sans-serif; outline: none; }
+    .filter-toggle-row input:focus { border-color: var(--accent); }
+    .filter-toggle-btn { font-size: 11px; padding: 5px 10px; border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--surface); color: var(--text-muted); cursor: pointer; font-family: 'DM Sans', sans-serif; white-space: nowrap; display: flex; align-items: center; gap: 4px; }
+    .filter-toggle-btn:hover { border-color: var(--border-hover); color: var(--text); }
+    .filter-toggle-btn.has-active { background: var(--accent-light); color: var(--accent-text); border-color: transparent; font-weight: 500; }
+    .filter-panel { display: none; margin: 0 1.5rem 0.75rem; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow); padding: 10px 12px; }
+    .filter-panel.open { display: block; }
+    .filter-panel .filter-row { padding: 5px 0; border-bottom: 1px solid var(--border); }
+    .filter-panel .filter-row:last-child { border-bottom: none; padding-bottom: 0; }
+    .filter-panel .filter-row:first-child { padding-top: 0; }
     .filter-search-row { display: flex; gap: 6px; align-items: center; padding: 0 1.5rem 0.5rem; }
-    .filter-search-row input { flex: 1; font-size: 13px; padding: 7px 10px; border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--surface); color: var(--text); font-family: 'DM Sans', sans-serif; outline: none; }
+    .filter-search-row input { flex: 1; font-size: 12px; padding: 6px 9px; border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--surface); color: var(--text); font-family: 'DM Sans', sans-serif; outline: none; }
     .filter-search-row input:focus { border-color: var(--accent); }
-    @media (max-width: 640px) {
-      .filter-bar { padding: 0 1rem 0.75rem; }
-      .filter-search-row { padding: 0 1rem 0.5rem; }
-      .filter-row-label { min-width: 44px; font-size: 9px; }
-      .f-pill { font-size: 11px; padding: 3px 8px; }
-    }
+
     /* ── LOADING ── */
-    .loading { padding: 3rem; text-align: center; color: var(--text-muted); font-size: 14px; }
+    .loading { padding: 3rem; text-align: center; color: var(--text-muted); font-size: 13px; }
 
     @media (max-width: 640px) {
       /* Stats */
-      .stats-bar { grid-template-columns: repeat(2,1fr); padding: 0.75rem 1rem; gap: 8px; }
-      .stat { padding: 10px 12px; }
-      .stat-val { font-size: 20px; }
+      .stats-bar { grid-template-columns: repeat(2,1fr); padding: 0.5rem 0.75rem; gap: 6px; }
+      .stat { padding: 8px 10px; }
+      .stat-val { font-size: 16px; }
       /* Topbar */
-      .topbar { padding: 0 1rem; height: 50px; }
-      .topbar h1 { font-size: 18px; }
+      .topbar { padding: 0 0.75rem; height: 44px; }
+      .topbar h1 { font-size: 16px; }
       .topbar-sub { display: none; }
-      /* Toolbar — stack filters in two rows */
-      .toolbar { padding: 0.5rem 1rem 0.75rem; gap: 6px; }
-      .toolbar select { font-size: 12px; padding: 6px 6px; flex: 1; min-width: 0; max-width: none; }
-      .toolbar input[type=text] { font-size: 13px; padding: 7px 8px; }
+      /* Toolbar */
+      .toolbar { padding: 0.5rem 0.75rem 0.5rem; gap: 5px; }
+      .toolbar select { font-size: 11px; padding: 5px 5px; flex: 1; min-width: 0; max-width: none; }
+      .toolbar input[type=text] { font-size: 12px; padding: 5px 7px; }
+      /* Filter toggle */
+      .filter-toggle-row { padding: 0 0.75rem 0.4rem; }
+      .filter-panel { margin: 0 0.75rem 0.5rem; }
       /* Table */
-      .table-wrap { padding: 0 0 1.5rem; }
-      table { font-size: 12px; }
-      th { padding: 7px 6px; font-size: 10px; }
-      td { padding: 7px 6px; }
+      .table-wrap { padding: 0 0 1rem; }
+      table { font-size: 11px; }
+      th { padding: 5px 5px; font-size: 9px; }
+      td { padding: 5px 5px; }
       /* Map */
-      .map-section { padding: 0 1rem 1.5rem; }
-      #map-leaflet { height: 380px; }
-      /* Modal — sheet from bottom */
+      .map-section { padding: 0 0.75rem 1rem; }
+      #map-leaflet { height: 340px; }
+      /* Modal */
       .form-row { grid-template-columns: 1fr; }
-      .modal { padding: 1.25rem 1rem 1.5rem; }
-
+      .modal { padding: 1rem 0.75rem 1.5rem; }
       .form-group input[type=text],
       .form-group input[type=number],
       .form-group select,
       .form-group textarea { font-size: 16px; padding: 10px 11px; }
-      .btn-primary { padding: 8px 14px; }
+      .btn-primary { padding: 7px 12px; }
     }
   </style>
 </head>
@@ -301,52 +311,58 @@
     <div class="stat"><div class="stat-label">Accolades</div><div class="stat-val" id="s-acc">—</div></div>
   </div>
 
-  <div class="filter-bar">
-    <div class="filter-row">
-      <span class="filter-row-label">Hype</span>
-      <span class="f-pill" data-filter="hype" data-val="1" onclick="togglePill(this)">❗</span>
-      <span class="f-pill" data-filter="hype" data-val="2" onclick="togglePill(this)">❗❗</span>
-      <span class="f-pill" data-filter="hype" data-val="3" onclick="togglePill(this)">❗❗❗</span>
-    </div>
-    <div class="filter-row">
-      <span class="filter-row-label">Category</span>
-      <div id="fp-cat" style="display:flex;flex-wrap:wrap;gap:5px"></div>
-    </div>
-    <div class="filter-row">
-      <span class="filter-row-label">Types</span>
-      <div id="fp-food" style="display:flex;flex-wrap:wrap;gap:5px"></div>
-    </div>
-    <div class="filter-row">
-      <span class="filter-row-label">Price</span>
-      <span class="f-pill" data-filter="price" data-val="$" onclick="togglePill(this)">$</span>
-      <span class="f-pill" data-filter="price" data-val="$$" onclick="togglePill(this)">$$</span>
-      <span class="f-pill" data-filter="price" data-val="$$$" onclick="togglePill(this)">$$$</span>
-      <span class="f-pill" data-filter="price" data-val="$$$$" onclick="togglePill(this)">$$$$</span>
-    </div>
-    <div class="filter-row">
-      <span class="filter-row-label">Accolade</span>
-      <span class="f-pill" data-filter="accolade" data-val="isNew" onclick="togglePill(this)">New</span>
-      <span class="f-pill" data-filter="accolade" data-val="michelinGuide" onclick="togglePill(this)">📖 Guide</span>
-      <span class="f-pill" data-filter="accolade" data-val="michelin1" onclick="togglePill(this)">Michelin ★</span>
-      <span class="f-pill" data-filter="accolade" data-val="michelin2" onclick="togglePill(this)">Michelin ★★</span>
-      <span class="f-pill" data-filter="accolade" data-val="michelin3" onclick="togglePill(this)">Michelin ★★★</span>
-      <span class="f-pill" data-filter="accolade" data-val="bib" onclick="togglePill(this)">Bib Gourmand</span>
-      <span class="f-pill" data-filter="accolade" data-val="jb" onclick="togglePill(this)">James Beard</span>
-    </div>
-    <div class="filter-row">
-      <span class="filter-row-label">Status</span>
-      <span class="f-pill" data-filter="tried" data-val="no" onclick="togglePill(this)">Want to try</span>
-      <span class="f-pill" data-filter="tried" data-val="yes" onclick="togglePill(this)">Tried</span>
-    </div>
-  </div>
-  <div class="filter-search-row">
+  <div class="filter-toggle-row">
     <div style="position:relative;flex:1">
       <input type="text" id="f-search" placeholder="Search or add a place..." oninput="onSearchInput()" autocomplete="off" />
       <div id="search-add-btn" style="display:none;position:absolute;right:6px;top:50%;transform:translateY(-50%)">
         <button class="btn btn-sm btn-primary" onclick="openAddFromSearch()">+ Add</button>
       </div>
     </div>
-    <button class="btn btn-sm" onclick="resetFilters()" title="Reset">↺</button>
+    <button class="filter-toggle-btn" id="filter-toggle-btn" onclick="toggleFilterPanel()">
+      <span id="filter-toggle-label">▾ Filter</span>
+    </button>
+    <button class="btn btn-sm" onclick="resetFilters()">Reset</button>
+  </div>
+
+  <div class="filter-panel" id="filter-panel">
+    <div class="filter-bar">
+      <div class="filter-row">
+        <span class="filter-row-label">Hype</span>
+        <span class="f-pill" data-filter="hype" data-val="1" onclick="togglePill(this)">❗</span>
+        <span class="f-pill" data-filter="hype" data-val="2" onclick="togglePill(this)">❗❗</span>
+        <span class="f-pill" data-filter="hype" data-val="3" onclick="togglePill(this)">❗❗❗</span>
+      </div>
+      <div class="filter-row">
+        <span class="filter-row-label">Category</span>
+        <div id="fp-cat" style="display:flex;flex-wrap:wrap;gap:4px"></div>
+      </div>
+      <div class="filter-row">
+        <span class="filter-row-label">Types</span>
+        <div id="fp-food" style="display:flex;flex-wrap:wrap;gap:4px"></div>
+      </div>
+      <div class="filter-row">
+        <span class="filter-row-label">Price</span>
+        <span class="f-pill" data-filter="price" data-val="$" onclick="togglePill(this)">$</span>
+        <span class="f-pill" data-filter="price" data-val="$$" onclick="togglePill(this)">$$</span>
+        <span class="f-pill" data-filter="price" data-val="$$$" onclick="togglePill(this)">$$$</span>
+        <span class="f-pill" data-filter="price" data-val="$$$$" onclick="togglePill(this)">$$$$</span>
+      </div>
+      <div class="filter-row">
+        <span class="filter-row-label">Accolade</span>
+        <span class="f-pill" data-filter="accolade" data-val="isNew" onclick="togglePill(this)">New</span>
+        <span class="f-pill" data-filter="accolade" data-val="michelinGuide" onclick="togglePill(this)">📖 Guide</span>
+        <span class="f-pill" data-filter="accolade" data-val="michelin1" onclick="togglePill(this)">Michelin ★</span>
+        <span class="f-pill" data-filter="accolade" data-val="michelin2" onclick="togglePill(this)">Michelin ★★</span>
+        <span class="f-pill" data-filter="accolade" data-val="michelin3" onclick="togglePill(this)">Michelin ★★★</span>
+        <span class="f-pill" data-filter="accolade" data-val="bib" onclick="togglePill(this)">Bib Gourmand</span>
+        <span class="f-pill" data-filter="accolade" data-val="jb" onclick="togglePill(this)">James Beard</span>
+      </div>
+      <div class="filter-row">
+        <span class="filter-row-label">Status</span>
+        <span class="f-pill" data-filter="tried" data-val="no" onclick="togglePill(this)">Want to try</span>
+        <span class="f-pill" data-filter="tried" data-val="yes" onclick="togglePill(this)">Tried</span>
+      </div>
+    </div>
   </div>
 
   <div id="view-table">
@@ -775,15 +791,23 @@ async function saveRating() {
   const notes = document.getElementById('rating-notes').value.trim()
   const filled = REVIEW_CATS.filter(c => reviewScores[c])
   const avg = filled.length ? parseFloat((filled.reduce((a,c) => a + reviewScores[c], 0) / filled.length).toFixed(2)) : null
-  const update = {
+  const p = places.find(x => x.id === ratingTargetId)
+  const mergedAccolades = { ...(p?.accolades || {}), reviewScores: {...reviewScores} }
+  // Explicit column names so nothing gets silently dropped
+  const { error } = await sb.from('places').update({
     tried: true,
     rating: avg,
     notes: notes || null,
-    accolades: { ...(places.find(x=>x.id===ratingTargetId)?.accolades||{}), reviewScores: {...reviewScores} }
+    accolades: mergedAccolades
+  }).eq('id', ratingTargetId)
+  if (error) { alert('Save failed: ' + error.message); return }
+  if (p) {
+    p.tried = true
+    p.rating = avg
+    p.notes = notes
+    if (!p.accolades) p.accolades = {}
+    p.accolades.reviewScores = {...reviewScores}
   }
-  await sb.from('places').update(update).eq('id', ratingTargetId)
-  const p = places.find(x => x.id === ratingTargetId)
-  if (p) { p.tried = true; p.rating = avg; p.notes = notes; if (!p.accolades) p.accolades = {}; p.accolades.reviewScores = {...reviewScores} }
   closeModal('rating-modal')
   renderAll()
 }
@@ -804,6 +828,18 @@ async function saveInlineField(id, field, value) {
 }
 
 // ── FILTERS ───────────────────────────────────
+function toggleFilterPanel() {
+  const panel = document.getElementById('filter-panel')
+  panel.classList.toggle('open')
+  document.getElementById('filter-toggle-label').textContent = panel.classList.contains('open') ? '▴ Filter' : '▾ Filter'
+}
+
+function updateFilterBtn() {
+  const hasActive = Object.values(activeFilters).some(s => s.size > 0)
+  const btn = document.getElementById('filter-toggle-btn')
+  if (btn) btn.classList.toggle('has-active', hasActive)
+}
+
 function togglePill(el) {
   const filter = el.dataset.filter
   const val = el.dataset.val
@@ -819,10 +855,20 @@ function togglePill(el) {
     activeFilters[filter].add(val)
     el.classList.add('active')
   }
+  updateFilterBtn()
   renderAll()
 }
 
-function getFiltered() {
+function resetFilters() {
+  Object.keys(activeFilters).forEach(k => activeFilters[k].clear())
+  document.querySelectorAll('.f-pill.active').forEach(p => p.classList.remove('active'))
+  document.getElementById('f-search').value = ''
+  const btn = document.getElementById('search-add-btn'); if(btn) btn.style.display='none'
+  sortCol = null
+  sortDir = 1
+  updateFilterBtn()
+  renderAll()
+}
   const fSearch = document.getElementById('f-search').value.toLowerCase()
   return places.filter(p => {
     if (activeFilters.hype.size && !activeFilters.hype.has(String(p.hype||''))) return false
@@ -861,15 +907,6 @@ function openAddFromSearch() {
     // Also trigger nominatim search for the name
     onNameInput()
   }, 50)
-}
-function resetFilters() {
-  Object.keys(activeFilters).forEach(k => activeFilters[k].clear())
-  document.querySelectorAll('.f-pill.active').forEach(p => p.classList.remove('active'))
-  document.getElementById('f-search').value = ''
-  const btn = document.getElementById('search-add-btn'); if(btn) btn.style.display='none'
-  sortCol = null
-  sortDir = 1
-  renderAll()
 }
 function renderAll() {
   updateFilterSelects()
