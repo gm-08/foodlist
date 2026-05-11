@@ -869,6 +869,8 @@ function resetFilters() {
   updateFilterBtn()
   renderAll()
 }
+
+function getFiltered() {
   const fSearch = document.getElementById('f-search').value.toLowerCase()
   return places.filter(p => {
     if (activeFilters.hype.size && !activeFilters.hype.has(String(p.hype||''))) return false
