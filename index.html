@@ -316,10 +316,10 @@
         <button class="btn btn-sm btn-primary" onclick="openAddFromSearch()">+ Add</button>
       </div>
     </div>
+    <button class="btn btn-sm" onclick="resetFilters()" style="font-size:10px;padding:3px 7px;white-space:nowrap">Reset</button>
     <button class="filter-toggle-btn" id="filter-toggle-btn" onclick="toggleFilterPanel()">
       <span id="filter-toggle-label">▾ Filter</span>
     </button>
-    <button class="btn btn-sm" onclick="resetFilters()">Reset</button>
   </div>
 
   <div class="filter-panel" id="filter-panel">
@@ -890,11 +890,11 @@ function getFiltered() {
 
 function onSearchInput() {
   const val = document.getElementById('f-search').value
-  const btn = document.getElementById('search-add-btn')
-  // Show "+ Add" button if text doesn't match any existing place name
+  const addBtn = document.getElementById('search-add-btn')
   const norm = normaliseName(val)
   const exists = places.some(p => normaliseName(p.name).includes(norm) && norm.length > 1)
-  btn.style.display = val.trim().length > 1 && !exists ? 'block' : 'none'
+  const showAdd = val.trim().length > 1 && !exists
+  addBtn.style.display = showAdd ? 'block' : 'none'
   renderAll()
 }
 
