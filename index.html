@@ -325,6 +325,10 @@
       .chips { margin: 0 0.75rem 0.5rem; }
       .filter-toggle-row input { font-size: 16px; padding: 5px 9px; }
     }
+
+    #maps-fill-status { display: none; font-size: 11px; line-height: 1.4; margin-top: 5px; color: var(--text-muted); }
+    #maps-fill-status.ok { color: var(--green-text); }
+    #maps-fill-status.warn { color: #9a5b00; }
 </style>
 </head>
 <body>
@@ -513,6 +517,11 @@
     <button class="btn" style="margin-bottom:1.25rem" onclick="closeModal('place-modal')">← Back</button>
     <h2 id="modal-title">Add a place</h2>
     <div class="form-group">
+      <label>Google Maps link <span style="text-transform:none;letter-spacing:0;font-weight:400;color:var(--text-faint)">— paste to autofill</span></label>
+      <input type="text" id="f-maps" placeholder="Paste a Google Maps link..." autocomplete="off" autocapitalize="off" oninput="onMapsInput()" />
+      <div id="maps-fill-status"></div>
+    </div>
+    <div class="form-group">
       <label>Name * <span id="autofill-notice" class="places-autofilled">✓ Auto-filled</span></label>
       <div class="places-wrap">
         <input type="text" id="f-name" placeholder="Search a restaurant name..." autocomplete="off" oninput="onNameInput()" />
@@ -563,10 +572,6 @@
         <button type="button" id="hype-btn-2" class="hype-opt" onclick="selectHype('2')">❗❗</button>
         <button type="button" id="hype-btn-3" class="hype-opt" onclick="selectHype('3')">❗❗❗</button>
       </div>
-    </div>
-    <div class="form-group">
-      <label>Maps URL</label>
-      <input type="text" id="f-maps" placeholder="Paste Google Maps link..." />
     </div>
     <div class="section-div">Accolades</div>
     <div class="accolade-grid">
@@ -1240,9 +1245,143 @@ function switchTab(tab) {
   else renderAll()
 }
 
+// ── GOOGLE MAPS LINK AUTOFILL ─────────────────
+let _mapsLast = '', _mapsTimer = null
+const GMAPS_RE = /(maps\.app\.goo\.gl|goo\.gl\/maps|g\.co\/kgs|google\.[a-z.]+\/maps|maps\.google\.[a-z.]+)/i
+const GMAPS_SHORT_RE = /(maps\.app\.goo\.gl|goo\.gl\/maps|g\.co\/kgs)/i
+const normKey = s => String(s).toLowerCase().replace(/[^a-z0-9]/g, '')
+const safeDecode = s => { try { return decodeURIComponent(s) } catch(e) { return s } }
+
+function setMapsStatus(msg, kind) {
+  const el = document.getElementById('maps-fill-status'); if (!el) return
+  el.textContent = msg || ''
+  el.className = kind || ''
+  el.style.display = msg ? 'block' : 'none'
+}
+
+function onMapsInput() {
+  clearTimeout(_mapsTimer)
+  _mapsTimer = setTimeout(() => autofillFromMaps(document.getElementById('f-maps').value), 350)
+}
+
+function parseMapsUrl(raw) {
+  let u
+  try { u = new URL(raw) } catch(e) { return {} }
+  if (u.hostname.startsWith('consent.')) {
+    const c = u.searchParams.get('continue')
+    if (c) return parseMapsUrl(c)
+  }
+  let name = '', lat = null, lng = null
+  const pm = u.pathname.match(/\/maps\/place\/([^/]+)/)
+  if (pm) name = safeDecode(pm[1]).replace(/\+/g, ' ')
+  const q = u.searchParams.get('q') || u.searchParams.get('query') || ''
+  const isCoords = /^\s*-?\d+(\.\d+)?\s*,\s*-?\d+(\.\d+)?\s*$/.test(q)
+  if (!name && q && !isCoords && !/^place_id:/i.test(q)) name = q
+  name = name.split(',')[0].trim()
+  if (/^-?\d+(\.\d+)?\s*°/.test(name)) name = ''   // a coordinates-only "place"
+  let m = raw.match(/!3d(-?\d+\.\d+)!4d(-?\d+\.\d+)/)       // the actual pin
+  if (!m) m = raw.match(/@(-?\d+\.\d+),(-?\d+\.\d+)/)         // map center
+  if (!m && isCoords) m = [null, ...q.split(',').map(x => x.trim())]
+  if (m) { lat = parseFloat(m[1]); lng = parseFloat(m[2]) }
+  return { name, lat: isNaN(lat) ? null : lat, lng: isNaN(lng) ? null : lng }
+}
+
+async function enrichFromOSM(name, lat, lng) {
+  const out = { name: '', hood: '', cuisines: [], kind: '' }
+  const hoodOf = a => a?.neighbourhood || a?.suburb || a?.city_district || ''
+  const H = { headers: { 'Accept-Language': 'en' } }
+  try {
+    let hit = null
+    if (name && lat != null) {
+      const d = 0.003
+      const vb = `${lng - d},${lat + d},${lng + d},${lat - d}`
+      const r = await fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(name)}&format=json&limit=1&addressdetails=1&extratags=1&viewbox=${vb}&bounded=1`, H)
+      hit = (await r.json())?.[0] || null
+    } else if (name) {
+      const r = await fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(name + ' Chicago')}&format=json&limit=1&addressdetails=1&extratags=1&countrycodes=us`, H)
+      hit = (await r.json())?.[0] || null
+      if (hit && lat == null) { out.lat = parseFloat(hit.lat); out.lng = parseFloat(hit.lon) }
+    }
+    if (hit) {
+      out.hood = hoodOf(hit.address)
+      out.kind = hit.type || ''
+      const c = hit.extratags?.cuisine
+      if (c) out.cuisines = c.split(/[;,]/).map(x => x.trim().replace(/_/g, ' ')).filter(Boolean)
+    }
+    if (!out.hood && lat != null) {
+      const r = await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json&zoom=18&addressdetails=1&extratags=1`, H)
+      const j = await r.json()
+      out.hood = hoodOf(j?.address)
+      if (!name && j?.category === 'amenity' && j?.name) {
+        out.name = j.name
+        out.kind = j.type || ''
+        const c = j.extratags?.cuisine
+        if (c) out.cuisines = c.split(/[;,]/).map(x => x.trim().replace(/_/g, ' ')).filter(Boolean)
+      }
+    }
+  } catch(e) {}
+  return out
+}
+
+async function autofillFromMaps(raw) {
+  const m = (raw || '').match(/https?:\/\/[^\s]+/)
+  const url = m ? m[0] : ''
+  if (!url || !GMAPS_RE.test(url) || url === _mapsLast) return
+  _mapsLast = url
+  document.getElementById('f-maps').value = url   // strips any share-sheet text around the link
+  setMapsStatus('Reading link…')
+
+  let full = url
+  if (GMAPS_SHORT_RE.test(url)) {
+    try {
+      const { data, error } = await sb.functions.invoke('resolve-maps', { body: { url } })
+      if (error || !data?.url) throw (error || new Error('no url'))
+      full = data.url
+    } catch(e) {
+      _mapsLast = ''
+      setMapsStatus('Link kept, but I couldn’t expand this short link. Either deploy the resolve-maps helper (one-time setup) or paste the full google.com/maps link.', 'warn')
+      return
+    }
+  }
+
+  const info = parseMapsUrl(full)
+  if (!info.name && info.lat == null) {
+    setMapsStatus('Link kept, but I couldn’t find a place in it. Fill in the name yourself.', 'warn')
+    return
+  }
+
+  setMapsStatus('Looking up details…')
+  const osm = await enrichFromOSM(info.name, info.lat, info.lng)
+  const addMode = editingId == null
+  const nameEl = document.getElementById('f-name'), hoodEl = document.getElementById('f-neighborhood')
+  const filled = []
+
+  const name = info.name || osm.name
+  if (name && (addMode || !nameEl.value.trim())) { nameEl.value = name; filled.push('name') }
+  if (osm.hood && (addMode || !hoodEl.value.trim())) { hoodEl.value = osm.hood; filled.push('neighborhood') }
+
+  const matched = [], unmatched = []
+  osm.cuisines.forEach(c => {
+    const t = allFoodTags.find(x => normKey(x) === normKey(c))
+    if (t) { if (!selectedTags.includes(t)) selectedTags.push(t); matched.push(t) } else unmatched.push(c)
+  })
+  if (matched.length) { renderTagPool(); filled.push('food type: ' + matched.join(', ')) }
+
+  const KIND = { cafe: ['cafe','coffee'], bar: ['bar','pub','cocktail'], pub: ['bar','pub'], fast_food: ['fast','quick'], bakery: ['bakery'], ice_cream: ['ice cream','dessert'], restaurant: ['restaurant'] }
+  const aliases = KIND[osm.kind] || []
+  const cat = aliases.length ? allCustomCats.find(c => aliases.some(a => normKey(c).includes(normKey(a)))) : null
+  if (cat && !selectedCats.includes(cat)) { selectedCats.push(cat); renderCatPool(); filled.push('category: ' + cat) }
+
+  document.getElementById('autofill-notice').style.display = filled.length ? 'inline' : 'none'
+  let msg = filled.length ? '✓ Filled ' + filled.join(' · ') + '. Price and anything else are up to you.' : 'Link saved. I couldn’t find extra details to fill in.'
+  if (unmatched.length) msg += ` (Cuisine data also says: ${unmatched.join(', ')} — not in your food types.)`
+  setMapsStatus(msg, filled.length ? 'ok' : 'warn')
+}
+
 // ── MODALS ────────────────────────────────────
 function openAdd() {
   editingId = null; selectedTags = []; selectedCats = []
+  _mapsLast = ''; setMapsStatus('')
   document.getElementById('modal-title').textContent = 'Add a place'
   document.getElementById('modal-delete-btn').style.display = 'none'
   const ids = ['f-name','f-neighborhood','f-maps','f-notes']
@@ -1255,6 +1394,7 @@ function openAdd() {
 }
 
 function openEdit(id) {
+  _mapsLast = ''; setMapsStatus('')
   const p = places.find(x => x.id === id)
   if (!p) return
   editingId = id
