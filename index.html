@@ -3,6 +3,11 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+  <meta name="apple-mobile-web-app-title" content="FoodList" />
+  <meta name="theme-color" content="#f7f6f2" />
   <title>FoodList</title>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -272,9 +277,9 @@
     table.fl-table { table-layout: fixed; }
     th:first-child, td:first-child { position: static; }
     td:first-child::after, th:first-child::after { display: none; }
-    .fl-table th.c-name { width: 52%; }
-    .fl-table th.c-cat { width: 30%; }
-    .fl-table th.c-status { width: 18%; min-width: 58px; text-align: center; }
+    .fl-table th.c-name { width: 46%; }
+    .fl-table th.c-cat { width: 37%; }
+    .fl-table th.c-status { width: 17%; min-width: 56px; text-align: center; }
     .fl-table td { height: 44px; padding: 6px 7px; overflow: hidden; }
     .fl-table td.c-status { text-align: center; }
     .nm-1 { font-weight: 500; font-size: 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -292,6 +297,34 @@
     .bb-item.active { color: var(--accent); font-weight: 500; }
     .bb-add { flex: 0 0 auto; width: 48px; height: 48px; border-radius: 50%; border: none; background: var(--accent); color: #fff; font-size: 28px; line-height: 1; cursor: pointer; margin: -14px 10px 0; box-shadow: 0 2px 8px rgba(0,0,0,0.25); font-family: 'DM Sans', sans-serif; }
     .bb-add:active { opacity: 0.85; }
+
+    /* ── STATUS SEGMENT, CHIPS, MULTI-SELECT ── */
+    .seg { display: flex; margin: 0 1.5rem 0.5rem; border: 1px solid var(--border); border-radius: var(--radius-sm); overflow: hidden; background: var(--surface); }
+    .seg button { flex: 1; padding: 8px 0; font-size: 12px; border: none; border-right: 1px solid var(--border); background: none; color: var(--text-muted); font-family: 'DM Sans', sans-serif; cursor: pointer; }
+    .seg button:last-child { border-right: none; }
+    .seg button.on { background: var(--accent-light); color: var(--accent-text); font-weight: 500; }
+    .chips { display: none; flex-wrap: wrap; gap: 5px; margin: 0 1.5rem 0.5rem; }
+    .chip { font-size: 11px; padding: 4px 9px; border-radius: 99px; background: var(--accent-light); color: var(--accent-text); cursor: pointer; white-space: nowrap; }
+    .ms { position: relative; display: inline-block; }
+    .ms-btn { display: flex; align-items: center; justify-content: space-between; gap: 8px; min-width: 150px; max-width: 220px; font-size: 12px; padding: 6px 10px; border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--surface); color: var(--text-muted); font-family: 'DM Sans', sans-serif; cursor: pointer; }
+    .ms-btn .ms-label { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .ms.has .ms-btn { background: var(--accent-light); color: var(--accent-text); border-color: transparent; font-weight: 500; }
+    .ms-list { display: none; position: absolute; top: calc(100% + 4px); left: 0; min-width: 100%; width: max-content; max-width: 72vw; max-height: 220px; overflow-y: auto; z-index: 60; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow-lg); padding: 4px; }
+    .ms.open .ms-list { display: block; }
+    .ms-item { display: flex; align-items: center; gap: 8px; padding: 9px 10px; font-size: 12px; border-radius: var(--radius-sm); cursor: pointer; color: var(--text); }
+    .ms-item:active { background: var(--bg); }
+    .ms-box { width: 15px; height: 15px; border: 1px solid var(--border-hover); border-radius: 4px; flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center; font-size: 11px; color: #fff; }
+    .ms-item.on .ms-box { background: var(--accent); border-color: var(--accent); }
+    .ms-item.on .ms-box::after { content: "✓"; }
+    .ms-empty { padding: 9px 10px; font-size: 12px; color: var(--text-faint); }
+    .cat-wrap { display: flex; flex-wrap: wrap; gap: 3px; }
+    .cat-wrap .badge { font-size: 10px; padding: 2px 6px; max-width: 100%; overflow: hidden; text-overflow: ellipsis; }
+    .food-line { font-size: 9.5px; color: var(--text-muted); margin-top: 3px; line-height: 1.3; }
+    @media (max-width: 640px) {
+      .seg { margin: 0 0.75rem 0.5rem; }
+      .chips { margin: 0 0.75rem 0.5rem; }
+      .filter-toggle-row input { font-size: 16px; padding: 5px 9px; }
+    }
 </style>
 </head>
 <body>
@@ -344,6 +377,13 @@
     </button>
   </div>
 
+  <div class="seg" id="seg-status">
+    <button data-v="" class="on" onclick="setStatus('')">All</button>
+    <button data-v="no" onclick="setStatus('no')">Want to try</button>
+    <button data-v="yes" onclick="setStatus('yes')">Tried</button>
+  </div>
+  <div class="chips" id="filter-chips"></div>
+
   <div class="filter-panel" id="filter-panel">
     <div class="filter-bar">
       <div class="filter-row">
@@ -377,12 +417,8 @@
         <span class="f-pill" data-filter="accolade" data-val="bib" onclick="togglePill(this)">Bib Gourmand</span>
         <span class="f-pill" data-filter="accolade" data-val="jb" onclick="togglePill(this)">James Beard</span>
       </div>
-      <div class="filter-row">
-        <span class="filter-row-label">Status</span>
-        <span class="f-pill" data-filter="tried" data-val="no" onclick="togglePill(this)">Want to try</span>
-        <span class="f-pill" data-filter="tried" data-val="yes" onclick="togglePill(this)">Tried</span>
-      </div>
     </div>
+    <div style="padding-top:8px"><button class="btn btn-primary" id="show-results-btn" style="width:100%" onclick="toggleFilterPanel()">Show results</button></div>
   </div>
 
   <nav class="bottom-bar">
@@ -862,7 +898,7 @@ function toggleFilterPanel() {
 }
 
 function updateFilterBtn() {
-  const hasActive = Object.values(activeFilters).some(s => s.size > 0)
+  const hasActive = Object.entries(activeFilters).some(([k, set]) => k !== 'tried' && set.size > 0)
   const btn = document.getElementById('filter-toggle-btn')
   if (btn) btn.classList.toggle('has-active', hasActive)
 }
@@ -893,6 +929,7 @@ function resetFilters() {
   const btn = document.getElementById('search-add-btn'); if(btn) btn.style.display='none'
   sortCol = null
   sortDir = 1
+  _msOpen = null
   updateFilterBtn()
   renderAll()
 }
@@ -944,21 +981,76 @@ function renderAll() {
   else if (currentTab === 'map') renderMap()
 }
 
+let _msSig = ''
+let _msOpen = null
+const ACC_LABELS = { isNew:'New', michelinGuide:'📖 Guide', michelin1:'Michelin ★', michelin2:'Michelin ★★', michelin3:'Michelin ★★★', bib:'Bib Gourmand', jb:'James Beard' }
+const escAttr = v => String(v).replace(/&/g,'&amp;').replace(/"/g,'&quot;')
+
 function updateFilterSelects() {
-  const allCats = [...new Set(places.flatMap(p=>(p.customCat||'').split(',').filter(Boolean)))].sort()
-  const catEl = document.getElementById('fp-cat')
-  const foodEl = document.getElementById('fp-food')
-  if (catEl) {
-    catEl.innerHTML = allCats.map(c =>
-      `<span class="f-pill${activeFilters.cat.has(c)?' active':''}" data-filter="cat" data-val="${c}" onclick="togglePill(this)">${c}</span>`
-    ).join('')
+  const allCats = [...new Set(places.flatMap(p=>(p.customCat||'').split(',').map(x=>x.trim()).filter(Boolean)))].sort()
+  const foods = [...allFoodTags].sort()
+  const sig = JSON.stringify([allCats, foods])
+  if (sig !== _msSig) {
+    _msSig = sig
+    const build = (key, vals) => `<div class="ms" id="ms-${key}"><button type="button" class="ms-btn" onclick="toggleMs('${key}')"><span class="ms-label">Any</span><span>▾</span></button><div class="ms-list">${
+      vals.length ? vals.map(v => `<div class="ms-item" data-key="${key}" data-val="${escAttr(v)}" onclick="pickMs(this)"><span class="ms-box"></span><span>${v}</span></div>`).join('') : '<div class="ms-empty">None yet</div>'
+    }</div></div>`
+    const catEl = document.getElementById('fp-cat'), foodEl = document.getElementById('fp-food')
+    if (catEl) catEl.innerHTML = build('cat', allCats)
+    if (foodEl) foodEl.innerHTML = build('food', foods)
   }
-  if (foodEl) {
-    foodEl.innerHTML = [...allFoodTags].sort().map(t =>
-      `<span class="f-pill${activeFilters.food.has(t)?' active':''}" data-filter="food" data-val="${t}" onclick="togglePill(this)">${t}</span>`
-    ).join('')
-  }
+  syncFilterUI()
 }
+
+function toggleMs(key) {
+  _msOpen = _msOpen === key ? null : key
+  syncFilterUI()
+}
+function pickMs(el) {
+  const set = activeFilters[el.dataset.key], v = el.dataset.val
+  if (set.has(v)) set.delete(v); else set.add(v)
+  renderAll()
+}
+function setStatus(v) {
+  activeFilters.tried.clear()
+  if (v) activeFilters.tried.add(v)
+  renderAll()
+}
+function removeFilter(el) {
+  activeFilters[el.dataset.key].delete(el.dataset.val)
+  renderAll()
+}
+function renderChips() {
+  const el = document.getElementById('filter-chips'); if (!el) return
+  const chips = []
+  ;['hype','cat','food','price','accolade'].forEach(k => activeFilters[k].forEach(v => {
+    const label = k === 'hype' ? '❗'.repeat(+v) : k === 'accolade' ? (ACC_LABELS[v] || v) : v
+    chips.push(`<span class="chip" data-key="${k}" data-val="${escAttr(v)}" onclick="removeFilter(this)">${label} ×</span>`)
+  }))
+  el.innerHTML = chips.join('')
+  el.style.display = chips.length ? 'flex' : 'none'
+}
+function syncFilterUI() {
+  document.querySelectorAll('.f-pill[data-filter]').forEach(p => p.classList.toggle('active', !!activeFilters[p.dataset.filter]?.has(p.dataset.val)))
+  document.querySelectorAll('.ms-item').forEach(i => i.classList.toggle('on', activeFilters[i.dataset.key].has(i.dataset.val)))
+  ;['cat','food'].forEach(k => {
+    const box = document.getElementById('ms-' + k); if (!box) return
+    const sel = [...activeFilters[k]]
+    box.querySelector('.ms-label').textContent = !sel.length ? 'Any' : sel.length === 1 ? sel[0] : `${sel[0]} +${sel.length - 1}`
+    box.classList.toggle('has', sel.length > 0)
+    box.classList.toggle('open', _msOpen === k)
+  })
+  const st = [...activeFilters.tried][0] || ''
+  document.querySelectorAll('#seg-status button').forEach(b => b.classList.toggle('on', b.dataset.v === st))
+  renderChips()
+  updateFilterBtn()
+  const n = getFiltered().length
+  const sb = document.getElementById('show-results-btn')
+  if (sb) sb.textContent = `Show ${n} result${n === 1 ? '' : 's'}`
+}
+document.addEventListener('click', e => {
+  if (_msOpen && !e.target.closest('.ms')) { _msOpen = null; syncFilterUI() }
+})
 
 function renderStats() {
   document.getElementById('s-total').textContent = places.length
@@ -1029,24 +1121,23 @@ function renderTable() {
   ).join('')
   document.getElementById('tbody').innerHTML = list.map(p => {
     const cats = (p.customCat||'').split(',').map(x=>x.trim()).filter(Boolean)
-    const catCell = cats.length
-      ? `<div class="cat-one"><span class="badge badge-cat">${cats[0]}</span>${cats.length>1 ? `<span class="cat-more">+${cats.length-1}</span>` : ''}</div>`
-      : '<span style="color:var(--text-faint);font-size:11px">—</span>'
+    const food = (p.foodTags||[]).join(', ')
+    const catCell = (cats.length ? `<div class="cat-wrap">${cats.map(c=>`<span class="badge badge-cat">${c}</span>`).join('')}</div>` : '<span style="color:var(--text-faint);font-size:11px">—</span>')
+      + (food ? `<div class="food-line">${food}</div>` : '')
     const statusBtn = p.tried
       ? `<button class="st-btn is-tried" onclick="event.stopPropagation();openRating(${p.id})">${p.rating != null ? p.rating.toFixed(1) + '★' : '✓'}</button>`
       : `<button class="st-btn" onclick="event.stopPropagation();openRating(${p.id})" aria-label="Mark tried">+</button>`
     const h = p.hype ? String(p.hype).trim() : ''
     const hypeTxt = !p.tried && ['1','2','3'].includes(h) ? '❗'.repeat(+h) : ''
     const mapsLink = p.maps ? `<a href="${p.maps}" target="_blank" onclick="event.stopPropagation()">↗</a>` : ''
-    const line2 = [ [p.neighborhood, mapsLink].filter(Boolean).join(' '), p.price, hypeTxt ].filter(Boolean).join(' · ')
-    const food = (p.foodTags||[]).join(', ')
+    const place = [mapsLink, p.neighborhood].filter(Boolean).join(' ')
+    const line2 = [place, p.price, hypeTxt].filter(Boolean).join(' · ')
     const acc = accoladeHTML(p.accolades)
-    const line3 = [food, acc].filter(Boolean).join(' ')
     return `<tr onclick="openEdit(${p.id})" style="cursor:pointer">
       <td class="c-name">
         <div class="nm-1">${p.name}</div>
         ${line2 ? `<div class="nm-2">${line2}</div>` : ''}
-        ${line3 ? `<div class="nm-3">${line3}</div>` : ''}
+        ${acc ? `<div class="nm-3">${acc}</div>` : ''}
       </td>
       <td class="c-cat">${catCell}</td>
       <td class="c-status" onclick="event.stopPropagation()">${statusBtn}</td>
