@@ -1339,7 +1339,16 @@ async function autofillFromMaps(raw) {
       full = data.url
     } catch(e) {
       _mapsLast = ''
-      setMapsStatus('Link kept, but I couldn’t expand this short link. Either deploy the resolve-maps helper (one-time setup) or paste the full google.com/maps link.', 'warn')
+      let detail = ''
+      try {
+        if (e?.context?.status) {
+          detail = 'HTTP ' + e.context.status
+          try { const j = await e.context.json(); const m = j?.error || j?.message; if (m) detail += ': ' + m } catch(_) {}
+        } else {
+          detail = e?.message || String(e)
+        }
+      } catch(_) {}
+      setMapsStatus('Link kept, but I couldn’t expand this short link' + (detail ? ' (' + detail + ')' : '') + '. Check that the resolve-maps function is deployed, or paste the full google.com/maps link.', 'warn')
       return
     }
   }
