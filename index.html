@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <title>FoodList</title>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -265,7 +265,34 @@
       .form-group textarea { font-size: 16px; padding: 10px 11px; }
       .btn-primary { padding: 7px 12px; }
     }
-  </style>
+  
+    /* ── MOBILE-FIRST TABLE (3 columns) + BOTTOM TAB BAR ── */
+    body { padding-bottom: calc(64px + env(safe-area-inset-bottom)); -webkit-text-size-adjust: 100%; }
+    #map-leaflet { isolation: isolate; }
+    table.fl-table { table-layout: fixed; }
+    th:first-child, td:first-child { position: static; }
+    td:first-child::after, th:first-child::after { display: none; }
+    .fl-table th.c-name { width: 52%; }
+    .fl-table th.c-cat { width: 30%; }
+    .fl-table th.c-status { width: 18%; min-width: 58px; text-align: center; }
+    .fl-table td { height: 44px; padding: 6px 7px; overflow: hidden; }
+    .fl-table td.c-status { text-align: center; }
+    .nm-1 { font-weight: 500; font-size: 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .nm-2 { font-size: 9.5px; color: var(--text-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; margin-top: 1px; }
+    .nm-2 a { color: var(--blue); text-decoration: none; }
+    .nm-3 { font-size: 9px; color: var(--text-faint); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; margin-top: 1px; }
+    .cat-one { display: flex; align-items: center; gap: 3px; }
+    .cat-one .badge { font-size: 10px; padding: 2px 6px; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
+    .cat-more { font-size: 9px; color: var(--text-faint); flex-shrink: 0; }
+    .st-btn { font-size: 11px; padding: 5px 7px; min-width: 40px; border-radius: var(--radius-sm); border: 1px solid transparent; background: transparent; color: var(--text-faint); cursor: pointer; font-family: 'DM Sans', sans-serif; white-space: nowrap; }
+    .st-btn.is-tried { background: var(--green-bg); color: var(--green-text); }
+    .bottom-bar { position: fixed; left: 0; right: 0; bottom: 0; z-index: 100; display: flex; align-items: center; justify-content: space-around; background: var(--surface); border-top: 1px solid var(--border); padding: 6px 8px calc(6px + env(safe-area-inset-bottom)); }
+    .bb-item { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 1px; background: none; border: none; color: var(--text-muted); font-family: 'DM Sans', sans-serif; font-size: 10px; padding: 4px 0; cursor: pointer; min-height: 44px; justify-content: center; }
+    .bb-item .bb-ico { font-size: 17px; line-height: 1; }
+    .bb-item.active { color: var(--accent); font-weight: 500; }
+    .bb-add { flex: 0 0 auto; width: 48px; height: 48px; border-radius: 50%; border: none; background: var(--accent); color: #fff; font-size: 28px; line-height: 1; cursor: pointer; margin: -14px 10px 0; box-shadow: 0 2px 8px rgba(0,0,0,0.25); font-family: 'DM Sans', sans-serif; }
+    .bb-add:active { opacity: 0.85; }
+</style>
 </head>
 <body>
 
@@ -295,11 +322,6 @@
       <span class="topbar-sub" id="topbar-email"></span>
     </div>
     <div class="topbar-right">
-      <div style="display:flex;gap:6px;">
-        <button class="btn btn-sm" id="tab-table" onclick="switchTab('table')">Table</button>
-        <button class="btn btn-sm" id="tab-map" onclick="switchTab('map')">Map</button>
-        <button class="btn btn-sm" id="tab-suggest" onclick="switchTab('suggest')">🎰 Suggest</button>
-      </div>
       <button class="signout-btn" onclick="doSignOut()">Sign out</button>
     </div>
   </div>
@@ -363,9 +385,16 @@
     </div>
   </div>
 
+  <nav class="bottom-bar">
+    <button class="bb-item active" id="tab-table" onclick="switchTab('table')"><span class="bb-ico">☰</span><span>Table</span></button>
+    <button class="bb-item" id="tab-map" onclick="switchTab('map')"><span class="bb-ico">📍</span><span>Map</span></button>
+    <button class="bb-add" onclick="openAdd()" aria-label="Add a place">+</button>
+    <button class="bb-item" id="tab-suggest" onclick="switchTab('suggest')"><span class="bb-ico">🎰</span><span>Suggest</span></button>
+  </nav>
+
   <div id="view-table">
     <div class="table-wrap"><div class="table-scroll">
-      <table>
+      <table class="fl-table">
         <thead><tr id="thead-row"></tr></thead>
         <tbody id="tbody"></tbody>
       </table>
@@ -607,6 +636,7 @@
       <textarea id="rating-notes" placeholder="What did you think? Best dish, would you return..." style="width:100%;padding:9px 11px;border:1px solid var(--border);border-radius:var(--radius-sm);font-size:14px;font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);resize:vertical;min-height:64px;line-height:1.5;outline:none"></textarea>
     </div>
     <div class="rating-actions">
+      <button class="btn" id="rating-untry-btn" style="margin-right:auto;color:var(--text-muted)" onclick="untryFromModal()">Remove tried</button>
       <button class="btn" onclick="closeModal('rating-modal')">Cancel</button>
       <button class="btn btn-primary" onclick="saveRating()">Save</button>
     </div>
@@ -992,43 +1022,34 @@ function renderTable() {
   })
   const arr = c => sortCol===c ? (sortDir===1?' ↑':' ↓') : ''
   const cols = [
-    {k:'name',l:'Name',cls:''},{k:'customCat',l:'Category',cls:''},{k:'foodTags',l:'Types',cls:''},
-    {k:'rating',l:'Status',cls:''},{k:'_map',l:'',cls:''}
+    {k:'name',l:'Name',cls:'c-name'},{k:'customCat',l:'Category',cls:'c-cat'},{k:'rating',l:'Status',cls:'c-status'}
   ]
   document.getElementById('thead-row').innerHTML = cols.map(c =>
     `<th class="${c.cls}" onclick="sortBy('${c.k}')">${c.l}${arr(c.k)}</th>`
   ).join('')
   document.getElementById('tbody').innerHTML = list.map(p => {
-    const catTags = (p.customCat||'').split(',').filter(Boolean).map(c=>`<span class="badge badge-cat">${c}</span>`).join(' ')
-    const foodBadges = (p.foodTags||[]).map(t=>`<span class="badge badge-food">${t}</span>`).join(' ')
-    const triedBtn = p.tried
-      ? `<div style="display:flex;gap:3px;align-items:center">
-           <button class="btn-tried is-tried" onclick="event.stopPropagation();openRating(${p.id})">${p.rating != null ? p.rating.toFixed(1) + '★' : '✓'}</button>
-           <button class="btn-tried" style="padding:3px 5px;font-size:10px;" onclick="event.stopPropagation();untryPlace(${p.id})" title="Remove tried">✕</button>
-         </div>`
-      : `<button class="btn-tried" onclick="event.stopPropagation();openRating(${p.id})">Tried?</button>`
-    const mapLink = p.maps ? `<a href="${p.maps}" target="_blank" style="font-size:12px;color:var(--blue);text-decoration:none;" onclick="event.stopPropagation()">Maps ↗</a>` : ''
-    const ratingCell = p.tried
-      ? (p.rating ? `<span class="stars-gold">${'★'.repeat(p.rating)}${'☆'.repeat(5-p.rating)}</span>` : '<span style="color:var(--text-faint);font-size:12px;">not rated</span>')
-      : '—'
-    const nameTitle = [p.name, p.neighborhood].filter(Boolean).join(' · ')
-    const accBadges = accoladeHTML(p.accolades)
-    const hypeSym = hypeSymbol(p)
-    const priceHype = [p.price, hypeSym].filter(Boolean).join(' ')
+    const cats = (p.customCat||'').split(',').map(x=>x.trim()).filter(Boolean)
+    const catCell = cats.length
+      ? `<div class="cat-one"><span class="badge badge-cat">${cats[0]}</span>${cats.length>1 ? `<span class="cat-more">+${cats.length-1}</span>` : ''}</div>`
+      : '<span style="color:var(--text-faint);font-size:11px">—</span>'
+    const statusBtn = p.tried
+      ? `<button class="st-btn is-tried" onclick="event.stopPropagation();openRating(${p.id})">${p.rating != null ? p.rating.toFixed(1) + '★' : '✓'}</button>`
+      : `<button class="st-btn" onclick="event.stopPropagation();openRating(${p.id})" aria-label="Mark tried">+</button>`
+    const h = p.hype ? String(p.hype).trim() : ''
+    const hypeTxt = !p.tried && ['1','2','3'].includes(h) ? '❗'.repeat(+h) : ''
+    const mapsLink = p.maps ? `<a href="${p.maps}" target="_blank" onclick="event.stopPropagation()">↗</a>` : ''
+    const line2 = [ [p.neighborhood, mapsLink].filter(Boolean).join(' '), p.price, hypeTxt ].filter(Boolean).join(' · ')
+    const food = (p.foodTags||[]).join(', ')
+    const acc = accoladeHTML(p.accolades)
+    const line3 = [food, acc].filter(Boolean).join(' ')
     return `<tr onclick="openEdit(${p.id})" style="cursor:pointer">
-      <td style="max-width:110px;min-width:70px" title="${nameTitle}">
-        <div style="font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${p.name}</div>
-        ${p.neighborhood ? `<div style="font-size:9px;color:var(--text-faint);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${p.neighborhood}</div>` : ''}
-        <div style="display:flex;align-items:center;gap:4px;margin-top:2px;flex-wrap:wrap">
-          ${p.price ? `<span style="font-size:10px;color:var(--text-muted)">${p.price}</span>` : ''}
-          ${hypeSym}
-          ${accBadges}
-        </div>
+      <td class="c-name">
+        <div class="nm-1">${p.name}</div>
+        ${line2 ? `<div class="nm-2">${line2}</div>` : ''}
+        ${line3 ? `<div class="nm-3">${line3}</div>` : ''}
       </td>
-      <td><div style="display:flex;flex-wrap:wrap;gap:3px">${catTags || '<span style="color:var(--text-faint);font-size:11px">—</span>'}</div></td>
-      <td><div style="display:flex;flex-wrap:wrap;gap:3px">${foodBadges || '<span style="color:var(--text-faint);font-size:11px">—</span>'}</div></td>
-      <td style="white-space:nowrap;width:1px" onclick="event.stopPropagation()" title="${p.rating ? p.rating + ' stars' : ''}">${triedBtn}</td>
-      <td style="white-space:nowrap;width:1px">${mapLink}</td>
+      <td class="c-cat">${catCell}</td>
+      <td class="c-status" onclick="event.stopPropagation()">${statusBtn}</td>
     </tr>`
   }).join('')
 }
@@ -1121,7 +1142,7 @@ function switchTab(tab) {
   document.getElementById('view-suggest').style.display = tab === 'suggest' ? 'block' : 'none'
   ;['table','map','suggest'].forEach(t => {
     const el = document.getElementById('tab-' + t)
-    if (el) el.style.fontWeight = t === tab ? '500' : '400'
+    if (el) el.classList.toggle('active', t === tab)
   })
   if (tab === 'map') setTimeout(() => renderMap(), 50)
   else if (tab === 'suggest') populateSuggestFilters()
@@ -1258,9 +1279,17 @@ async function addNewCat() {
 }
 
 // ── RATING ────────────────────────────────────
+function untryFromModal() {
+  const id = ratingTargetId
+  closeModal('rating-modal')
+  if (id != null) untryPlace(id)
+}
+
 function openRating(id) {
   ratingTargetId = id
   const p = places.find(x => x.id === id)
+  const ub = document.getElementById('rating-untry-btn')
+  if (ub) ub.style.display = p?.tried ? '' : 'none'
   document.getElementById('rating-name').textContent = p?.name || ''
   document.getElementById('rating-notes').value = p?.notes || ''
   // Load existing review scores
